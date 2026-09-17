@@ -1,0 +1,10 @@
+<%-- ============================================================
+OrbitechService.svc — WCF Service Host File
+============================================================
+TUTORIAL STEP: This file tells IIS (the web server) how to activate
+the WCF service. It points to the OrbitechService class.
+
+PLACE THIS FILE IN: OrbitechWeb/Services/OrbitechService.svc
+============================================================ --%>
+
+<%@ ServiceHost Language="C#" Debug="true" Service="OrbitechWeb.Services.OrbitechService" CodeBehind="OrbitechService.svc.cs" %>

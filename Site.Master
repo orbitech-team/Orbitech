@@ -1,0 +1,143 @@
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="OrbitechWeb.SiteMaster" %>
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OrbiTech — Your Tech, In Orbit</title>
+  <meta name="description" content="OrbiTech — South Africa's premier B2C e-commerce platform for new and certified pre-owned smartphones, tablets, and smartwatches." />
+  <meta name="theme-color" content="#0F172A" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Outfit:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" />
+   <link rel="stylesheet" href="assets/css/styles.css" />
+  <asp:ContentPlaceHolder ID="head" runat="server">
+  </asp:ContentPlaceHolder>
+</head>
+<body>
+  <form id="form1" runat="server">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="utility">
+    <div class="container">
+      <span class="promo">
+        <span class="tag">PROMO</span>
+        Free delivery across South Africa on orders over R1000
+      </span>
+      <span class="links">
+        <a href="#">Trade-in Estimator</a>
+        <a href="#">Student Portal</a>
+        <a href="#">ZA &middot; ZAR</a>
+      </span>
+    </div>
+  </div>
+  <header class="site-header">
+    <div class="container">
+      <a href='<%= ResolveUrl("~/Default.aspx") %>' class="brand">
+        <span class="brand-mark">O</span>
+        OrbiTech
+      </a>
+      <div class="search" role="search">
+        <input type="text" name="search" placeholder="Search for iPhones, Galaxy, iPads..." aria-label="Search the store" />
+        <button type="submit" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </button>
+      </div>
+      <div class="icon-row">
+    <asp:Literal ID="AdminDrawerLiteral" runat="server"></asp:Literal>
+        <asp:Panel ID="AccountPanel" runat="server" CssClass="icon-btn">
+          <a href='<%= ResolveUrl("~/Login.aspx") %>' aria-label="Account" title="Login / Register">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+          </a>
+        </asp:Panel>
+        <a href="#" class="icon-btn" aria-label="Wishlist">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="count">0</span>
+        </a>
+        <a href='<%= ResolveUrl("~/Cart.aspx") %>' class="icon-btn icon-btn--cart" aria-label="Cart">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2l-2 5v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-2-5z"/><path d="M4 7h16"/><path d="M16 11a4 4 0 0 1-8 0"/></svg>
+          <span class="count">0</span>
+        </a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">&#8801;</button>
+      </div>
+    </div>
+  </header>
+  <nav class="nav-bar" aria-label="Primary">
+    <div class="container">
+      <a href='<%= ResolveUrl("~/Shop.aspx") %>' class="all-cats">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>Tech Categories
+      </a>
+      <div class="main-nav">
+        <a href='<%= ResolveUrl("~/Default.aspx") %>'>Home</a>
+        <a href='<%= ResolveUrl("~/Shop.aspx?cat=Phone") %>'>Cellphones</a>
+        <a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>'>Tablets</a>
+        <a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>'>Smartwatches</a>
+        <a href='<%= ResolveUrl("~/Contact.aspx") %>'>Support</a>
+                <asp:Literal ID="AdminNavLiteral" runat="server"></asp:Literal>
+      </div>
+
+      <span class="nav-cta">STUDENT DISCOUNT: <strong>15% OFF</strong></span>
+    </div>
+  </nav>
+  <div class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <a href='<%= ResolveUrl("~/Default.aspx") %>' class="brand"><span class="brand-mark">O</span> OrbiTech</a>
+      <button class="drawer-close" type="button" aria-label="Close menu">Close &#10005;</button>
+    </div>
+    <a href='<%= ResolveUrl("~/Default.aspx") %>'>Home</a>
+    <a href='<%= ResolveUrl("~/Shop.aspx?cat=Phone") %>'>Cellphones</a>
+    <a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>'>Tablets</a>
+    <a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>'>Smartwatches</a>
+    <a href='<%= ResolveUrl("~/Contact.aspx") %>'>Support</a>
+    <a href='<%= ResolveUrl("~/Cart.aspx") %>'>Cart</a>
+    <asp:Literal ID="AdminDrawerLiteral1" runat="server"></asp:Literal>
+    <a href='<%= ResolveUrl("~/Login.aspx") %>' class="btn btn--indigo" style="margin-top:var(--s5); justify-content:center">Login / Register</a>
+  </div>
+  <main id="main">
+    <asp:ContentPlaceHolder ID="MainContent" runat="server">
+    </asp:ContentPlaceHolder>
+  </main>
+  <footer style="background: var(--ink); color: var(--paper); padding: var(--s9) 0 var(--s7);">
+    <div class="container">
+      <div style="display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: var(--s8); margin-bottom: var(--s9);">
+        <div>
+          <a href='<%= ResolveUrl("~/Default.aspx") %>' class="brand" style="color: var(--paper); margin-bottom: var(--s5);"><span class="brand-mark">O</span> OrbiTech</a>
+          <p style="opacity: 0.7; font-size: var(--text-sm); max-width: 30ch;">Bridging the gap between high electronic costs and consumer affordability in South Africa.</p>
+        </div>
+        <div>
+          <h4 style="color: var(--paper); margin-bottom: var(--s5); font-size: var(--text-base);">Shop</h4>
+          <ul style="opacity: 0.7; font-size: var(--text-sm); display: grid; gap: var(--s3); list-style:none; padding:0;">
+            <li><a href='<%= ResolveUrl("~/Shop.aspx?cat=Phone") %>'>Cellphones</a></li>
+            <li><a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>'>Tablets</a></li>
+            <li><a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>'>Smartwatches</a></li>
+            <li><a href='<%= ResolveUrl("~/Shop.aspx") %>'>All Products</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: var(--paper); margin-bottom: var(--s5); font-size: var(--text-base);">Services</h4>
+          <ul style="opacity: 0.7; font-size: var(--text-sm); display: grid; gap: var(--s3); list-style:none; padding:0;">
+            <li><a href="#">Trade-In</a></li>
+            <li><a href="#">Student Portal</a></li>
+            <li><a href="#">Warranty</a></li>
+            <li><a href="#">Repair Lab</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: var(--paper); margin-bottom: var(--s5); font-size: var(--text-base);">Support</h4>
+          <ul style="opacity: 0.7; font-size: var(--text-sm); display: grid; gap: var(--s3); list-style:none; padding:0;">
+            <li><a href='<%= ResolveUrl("~/Contact.aspx") %>'>Contact Us</a></li>
+            <li><a href="#">Shipping Policy</a></li>
+            <li><a href="#">FAQs</a></li>
+            <li><a href="#">Track Order</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(255,255,255,0.15); padding-top: var(--s5); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--s4)">
+        <span style="font-family: var(--ff-mono); font-size: 11px; opacity: 0.6;">&copy; 2026 OrbiTech (Pty) Ltd. All rights reserved.</span>
+        <span style="font-family: var(--ff-mono); font-size: 11px; opacity: 0.6;">Your Tech, In Orbit &middot; ICASA Approved</span>
+      </div>
+    </div>
+  </footer>
+    <script src="assets/js/main.js"></script>
+  </form>
+</body>
+</html>

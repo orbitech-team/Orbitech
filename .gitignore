@@ -1,0 +1,30 @@
+```
+# Build output — never commit these
+bin/
+obj/
+debug/
+release/
+
+# Visual Studio internal files
+.vs/
+*.user
+*.suo
+*.userosscache.*
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+
+# NuGet packages — restored automatically on build
+packages/
+
+# Test results
+TestResults/
+
+# Publish output
+publish/
+
+# OS junk
+Thumbs.db
+.DS_Store
+```
