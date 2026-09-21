@@ -93,3 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+
+
+function doHeaderSearch() {
+    var term = document.getElementById('headerSearch').value.trim();
+    window.location.href = 'Shop.aspx?search=' + encodeURIComponent(term);
+}
+document.getElementById('headerSearch').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); doHeaderSearch(); }
+});

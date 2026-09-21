@@ -65,6 +65,7 @@
     <Content Include="Default.aspx" />
     <Content Include="assets\css\styles.css" />
     <Content Include="assets\js\main.js" />
+    <Content Include="Favourite.aspx" />
     <Content Include="Logout.aspx" />
     <Content Include="Shop.aspx" />
     <Content Include="ProductDetails.aspx" />
@@ -96,6 +97,13 @@
     </Compile>
     <Compile Include="Default.aspx.designer.cs">
       <DependentUpon>Default.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Favourite.aspx.cs">
+      <DependentUpon>Favourite.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Favourite.aspx.designer.cs">
+      <DependentUpon>Favourite.aspx</DependentUpon>
     </Compile>
     <Compile Include="Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>

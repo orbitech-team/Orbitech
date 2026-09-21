@@ -2,6 +2,7 @@ using System;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using OrbitechWeb.Services;
 
 namespace OrbitechWeb
 {
@@ -30,6 +31,21 @@ namespace OrbitechWeb
                 string username = Session["Username"].ToString();
                 bool isAdmin = (Session["IsAdmin"] != null && (bool)Session["IsAdmin"]);
 
+
+                // Phase 2: live favourites count on the header heart
+                try
+                {
+                    var favService = new OrbitechService();
+                    if (FavCountSpan != null)
+                    {
+                        FavCountSpan.InnerText = favService.GetFavouritedProductIds(username).Count.ToString();
+                    }
+                }
+                catch
+                {
+                    // count stays 0 if the service is unreachable - header must never crash
+                }
+
                 // Account panel — username + logout (this already works)
                 if (AccountPanel != null)
                 {
@@ -50,8 +66,9 @@ namespace OrbitechWeb
                 // Admin links — inject HTML directly, no Visible property needed
                 if (AdminNavLiteral != null)
                     AdminNavLiteral.Text = isAdmin ? adminLinkHtml : "";
-                if (AdminHeaderLiteral != null)
-                    AdminHeaderLiteral.Text = isAdmin ? adminHeaderHtml : "";
+                if (AdminDrawerLiteral != null)
+                    AdminDrawerLiteral.Text = isAdmin ? adminHeaderHtml : "";
+
                 if (AdminDrawerLiteral1 != null)
                     AdminDrawerLiteral1.Text = isAdmin ? adminDrawerHtml : "";
             }
@@ -60,8 +77,8 @@ namespace OrbitechWeb
                 // Not logged in — empty all admin literals
                 if (AdminNavLiteral != null)
                     AdminNavLiteral.Text = "";
-                if (AdminHeaderLiteral != null)
-                    AdminHeaderLiteral.Text = "";
+                if (AdminDrawerLiteral != null)
+                    AdminDrawerLiteral.Text = "";
                 if (AdminDrawerLiteral1 != null)
                     AdminDrawerLiteral1.Text = "";
             }

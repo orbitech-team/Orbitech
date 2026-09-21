@@ -117,3 +117,17 @@ GO
 
 PRINT 'All tables created successfully.';
 GO
+
+
+CREATE TABLE FAVOURITE
+(
+    fav_ID   INT IDENTITY(1,1) PRIMARY KEY,
+    u_ID     INT NOT NULL,
+    p_ID     INT NOT NULL,
+    fav_Date DATETIME NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Favourite_User    FOREIGN KEY (u_ID) REFERENCES ORBI_USER(u_ID),
+    CONSTRAINT FK_Favourite_Product FOREIGN KEY (p_ID) REFERENCES ORBI_PRODUCT(p_ID),
+
+    CONSTRAINT UQ_Favourite_UserProduct UNIQUE (u_ID, p_ID)
+);

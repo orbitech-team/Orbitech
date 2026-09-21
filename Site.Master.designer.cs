@@ -33,6 +33,15 @@ namespace OrbitechWeb
         protected global::System.Web.UI.HtmlControls.HtmlForm form1;
 
         /// <summary>
+        /// MainScriptManager control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.ScriptManager MainScriptManager;
+
+        /// <summary>
         /// AdminDrawerLiteral control.
         /// </summary>
         /// <remarks>
@@ -42,15 +51,6 @@ namespace OrbitechWeb
         protected global::System.Web.UI.WebControls.Literal AdminDrawerLiteral;
 
         /// <summary>
-        /// AdminHeaderLiteral control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminHeaderLiteral;
-
-        /// <summary>
         /// AccountPanel control.
         /// </summary>
         /// <remarks>
@@ -58,6 +58,15 @@ namespace OrbitechWeb
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel AccountPanel;
+
+        /// <summary>
+        /// FavCountSpan control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl FavCountSpan;
 
         /// <summary>
         /// AdminNavLiteral control.

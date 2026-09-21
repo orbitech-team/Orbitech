@@ -68,7 +68,22 @@ namespace OrbitechWeb.Services
         [OperationContract]
         int GetCartCount(string username);
 
+        [OperationContract]
+        bool AddFavourite(string username, int productId);
+
+        [OperationContract]
+        bool RemoveFavourite(string username, int productId);
+
+        [OperationContract]
+        bool IsFavourite(string username, int productId);
+
+        [OperationContract]
+        List<Product> GetFavourites(string username);
+
+        [OperationContract]
+        List<int> GetFavouritedProductIds(string username);
 
 
     }
+
 }

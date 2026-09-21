@@ -133,15 +133,23 @@ namespace OrbitechWeb.Services
 
             using (SqlConnection conn = new SqlConnection(ConnectionString))
             {
-                string query = @"SELECT p.p_ID, p.p_Name, p.p_Description, p.p_Price, p.p_Quantity, 
-                                p.p_ImageURL, p.c_ID, c.c_Name, p.p_Brand, p.p_Colour, p.p_Condition, p.p_Grade
-                                FROM ORBI_PRODUCT p
-                                INNER JOIN CATEGORY c ON p.c_ID = c.c_ID
-                                WHERE p.p_Name LIKE '%' + @SearchTerm + '%' OR p.p_Brand LIKE '%' + @SearchTerm + '%'
-                                ORDER BY p.p_ID";
+                // One parameter, wildcards baked in once, reused by every LIKE.
+                // OR'd across name, brand, description, condition, grade AND category
+                // name (via the JOIN). Ranked: name matches first, then alphabetical.
+                string query = @"SELECT p.p_ID, p.p_Name, p.p_Description, p.p_Price, p.p_Quantity,
+                        p.p_ImageURL, p.c_ID, c.c_Name, p.p_Brand, p.p_Colour, p.p_Condition, p.p_Grade
+                        FROM ORBI_PRODUCT p
+                        INNER JOIN CATEGORY c ON p.c_ID = c.c_ID
+                        WHERE p.p_Name LIKE @Term
+                           OR p.p_Brand LIKE @Term
+                           OR p.p_Description LIKE @Term
+                           OR p.p_Condition LIKE @Term
+                           OR p.p_Grade LIKE @Term
+                           OR c.c_Name LIKE @Term
+                        ORDER BY CASE WHEN p.p_Name LIKE @Term THEN 0 ELSE 1 END, p.p_Name";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@SearchTerm", searchTerm);
+                cmd.Parameters.AddWithValue("@Term", "%" + searchTerm + "%");
 
                 conn.Open();
                 SqlDataReader reader = cmd.ExecuteReader();
@@ -154,6 +162,7 @@ namespace OrbitechWeb.Services
 
             return products;
         }
+
 
         public Product GetProduct(int productId)
         {
@@ -520,6 +529,130 @@ namespace OrbitechWeb.Services
                 conn.Open();
                 return (int)cmd.ExecuteScalar();
             }
+        }
+        public bool AddFavourite(string username, int productId)
+        {
+            int userId = GetUserId(username);
+            if (userId == -1) return false;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = "INSERT INTO FAVOURITE (u_ID, p_ID) VALUES (@UserID, @ProductID)";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+                cmd.Parameters.AddWithValue("@ProductID", productId);
+
+                try
+                {
+                    conn.Open();
+                    int rows = cmd.ExecuteNonQuery();
+                    return rows > 0;
+                }
+                catch (SqlException ex)
+                {
+                    // 2627/2601 = UNIQUE constraint violation => user already favourited
+                    // this product. The DATABASE caught the duplicate - that is the
+                    // UQ_Favourite_UserProduct constraint doing its job.
+                    if (ex.Number == 2627 || ex.Number == 2601)
+                    {
+                        return false;
+                    }
+                    throw;
+                }
+            }
+        }
+
+        public bool RemoveFavourite(string username, int productId)
+        {
+            int userId = GetUserId(username);
+            if (userId == -1) return false;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = "DELETE FROM FAVOURITE WHERE u_ID = @UserID AND p_ID = @ProductID";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+                cmd.Parameters.AddWithValue("@ProductID", productId);
+
+                conn.Open();
+                int rows = cmd.ExecuteNonQuery();
+                return rows > 0;
+            }
+        }
+
+        public bool IsFavourite(string username, int productId)
+        {
+            int userId = GetUserId(username);
+            if (userId == -1) return false;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = "SELECT COUNT(*) FROM FAVOURITE WHERE u_ID = @UserID AND p_ID = @ProductID";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+                cmd.Parameters.AddWithValue("@ProductID", productId);
+
+                conn.Open();
+                int count = (int)cmd.ExecuteScalar();
+                return count > 0;
+            }
+        }
+
+        public List<Product> GetFavourites(string username)
+        {
+            List<Product> products = new List<Product>();
+
+            int userId = GetUserId(username);
+            if (userId == -1) return products;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT p.p_ID, p.p_Name, p.p_Description, p.p_Price, p.p_Quantity,
+                        p.p_ImageURL, p.c_ID, c.c_Name, p.p_Brand, p.p_Colour, p.p_Condition, p.p_Grade
+                        FROM FAVOURITE f
+                        INNER JOIN ORBI_PRODUCT p ON f.p_ID = p.p_ID
+                        INNER JOIN CATEGORY c ON p.c_ID = c.c_ID
+                        WHERE f.u_ID = @UserID
+                        ORDER BY f.fav_Date DESC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    products.Add(MapProduct(reader));
+                }
+            }
+
+            return products;
+        }
+
+        public List<int> GetFavouritedProductIds(string username)
+        {
+            List<int> ids = new List<int>();
+
+            int userId = GetUserId(username);
+            if (userId == -1) return ids;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = "SELECT p_ID FROM FAVOURITE WHERE u_ID = @UserID";
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@UserID", userId);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    ids.Add(Convert.ToInt32(reader["p_ID"]));
+                }
+            }
+
+            return ids;
         }
 
     }

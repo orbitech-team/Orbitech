@@ -1,13 +1,4 @@
-<%-- ============================================================
-     Default.aspx — Home Page (converted from index.html)
-     ============================================================
-     TUTORIAL STEP: This page replaces index.html. The main change is
-     the <%@ Page %> directive at the top and the ContentPlaceHolder tags.
-     Most of the HTML is the same — only the page directive and form/links
-     have been adjusted for ASP.NET.
 
-     PLACE THIS FILE IN: OrbitechWeb/Default.aspx
-     ============================================================ --%>
 
 <%@ Page Title="OrbiTech — Your Tech, In Orbit" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="OrbitechWeb._Default" %>
 
@@ -105,15 +96,26 @@
       <!-- TUTORIAL STEP: Featured products loaded from database.
            The Repeater generates product cards from the top 8 products. -->
       <div class="product-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap: var(--s5);">
-        <asp:Repeater ID="FeaturedRepeater" runat="server">
+        <asp:Repeater ID="FeaturedRepeater" runat="server"
+            OnItemCommand="ProductRepeater_ItemCommand"
+            OnItemDataBound="ProductRepeater_ItemDataBound">
+
           <ItemTemplate>
             <article class="product-card">
-              <div class="img-wrap">
-                <span class='<%# Eval("Condition").ToString() == "New" ? "badge" : "badge badge--refurb" %>'>
-                  <%# Eval("Condition") %>
-                </span>
-                <img src='<%# Eval("ImageURL") %>' alt='<%# Eval("Name") %>' />
-              </div>
+               <div class="img-wrap">
+                    <!-- Badge shows condition (New or Refurbished) -->
+                    <span class='<%# Eval("Condition").ToString() == "New" ? "badge" : "badge badge--refurb" %>'>
+                      <%# Eval("Condition") %>
+                    </span>
+
+                        <asp:LinkButton ID="FavButton" runat="server"
+                        CommandName="FavToggle"
+                        CommandArgument='<%# Eval("ProductID") %>'
+                        CssClass="fav-btn" />
+
+
+                    <img src='<%# Eval("ImageURL") %>' alt='<%# Eval("Name") %>' />
+                  </div>
               <div class="stock"><span class="dot"></span><%# Eval("Brand") %></div>
               <a href='<%# ResolveUrl("~/ProductDetails.aspx?id=") + Eval("ProductID") %>' class="name"><%# Eval("Name") %></a>
               <div class="price"><span class="now">R<%# Eval("Price", "{0:N2}") %></span></div>
