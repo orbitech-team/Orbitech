@@ -12,18 +12,16 @@ namespace OrbitechWeb
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            // Check if this is an "add to cart" request from Shop.aspx or ProductDetails.aspx
-            // URL format: Cart.aspx?action=add&id=5
+            // Handle "add" links from Shop.aspx (Cart.aspx?action=add&id=5)
             string action = Request.QueryString["action"];
             string idParam = Request.QueryString["id"];
 
             if (action == "add" && !string.IsNullOrEmpty(idParam))
             {
                 AddToCartFromUrl(idParam);
-                return; // Redirects after adding
+                return;
             }
 
-            // Must be logged in to view the cart
             if (Session["Username"] == null)
             {
                 LoginPromptPanel.Visible = true;
@@ -45,33 +43,28 @@ namespace OrbitechWeb
             {
                 Response.Redirect("~/Cart.aspx", false);
                 Context.ApplicationInstance.CompleteRequest();
-        return;
+                return;
             }
 
-            // Must be logged in to add items
             if (Session["Username"] == null)
             {
-                // Redirect to login, then back to shop after
                 Response.Redirect("~/Login.aspx", false);
                 Context.ApplicationInstance.CompleteRequest();
-        return;
+                return;
             }
 
-            string username = Session["Username"].ToString();
             OrbitechService service = new OrbitechService();
-            service.AddToCart(username, productId, 1);
+            service.AddToCart(Session["Username"].ToString(), productId, 1);
 
-            // Redirect to cart page (without the action params) so it loads the cart
             Response.Redirect("~/Cart.aspx", false);
             Context.ApplicationInstance.CompleteRequest();
-}
-
+        }
 
         private void LoadCart()
         {
             string username = Session["Username"].ToString();
-
             OrbitechService service = new OrbitechService();
+
             List<CartItem> items = service.GetCartItems(username);
 
             if (items.Count == 0)
@@ -82,31 +75,96 @@ namespace OrbitechWeb
                 return;
             }
 
-            // Show cart, hide empty/login panels
             CartPanel.Visible = true;
             EmptyCartPanel.Visible = false;
             LoginPromptPanel.Visible = false;
 
-            // Bind items to Repeater
             CartRepeater.DataSource = items;
             CartRepeater.DataBind();
 
-            // Calculate totals
-            decimal subtotal = 0;
+            // PART A: totals now come from the SAME method the checkout
+            // uses, so both pages always show identical numbers.
+            string promo = Session["PromoCode"] as string;
+            OrderTotals totals = service.CalculateOrderTotals(items, promo);
+
             int totalItems = 0;
-            foreach (var item in items)
+            foreach (CartItem item in items)
             {
-                subtotal += item.LineTotal;
                 totalItems += item.Quantity;
             }
 
-            decimal vat = subtotal * 0.15m;
-            decimal total = subtotal + vat;
-
             ItemCountLiteral.Text = totalItems.ToString();
-            SubtotalLiteral.Text = subtotal.ToString("N2");
-            VatLiteral.Text = vat.ToString("N2");
-            TotalLiteral.Text = total.ToString("N2");
+            SubtotalLiteral.Text = totals.Subtotal.ToString("N2");
+            ShippingLiteral.Text = totals.Shipping == 0 ? "FREE" : "R" + totals.Shipping.ToString("N2");
+            VatLiteral.Text = totals.Tax.ToString("N2");
+            TotalLiteral.Text = totals.Total.ToString("N2");
+
+   
+
+
+            // Show the discount line only when a valid code is applied
+            if (totals.PromoApplied)
+            {
+                DiscountLinePanel.Visible = true;
+                DiscountLiteral.Text = totals.Discount.ToString("N2");
+            }
+            else
+            {
+                DiscountLinePanel.Visible = false;
+            }
+        }
+
+        // PART A: Apply button. Stores the code in Session so it
+        // survives the redirect to Checkout.aspx.
+        // PART A: Apply button. Stores the code in Session so it
+        // survives the redirect to Checkout.aspx.
+        protected void ApplyPromoBtn_Click(object sender, EventArgs e)
+        {
+            string code = PromoInput.Text.Trim();
+
+            OrbitechService service = new OrbitechService();
+            List<CartItem> items = service.GetCartItems(Session["Username"].ToString());
+            OrderTotals totals = service.CalculateOrderTotals(items, code);
+
+            if (totals.PromoApplied)
+            {
+                Session["PromoCode"] = code.ToUpper();
+            }
+            else
+            {
+                Session["PromoCode"] = null;
+            }
+
+            // Pre-fill the box with the currently applied code
+            PromoInput.Text = Session["PromoCode"] as string ?? "";
+
+            // RELOAD FIRST — LoadCart no longer touches the message panel,
+            // so it can't wipe anything we set below.
+            LoadCart();
+
+            // THEN set the message. Nothing runs after this during the
+            // request, so this is what the user sees when the page renders.
+            PromoMessagePanel.Visible = true;
+            if (totals.PromoApplied)
+            {
+                PromoMessageLiteral.Text = "<span style='color:var(--emerald);font-size:var(--text-sm);font-weight:600'>Promo code " + totals.PromoCode + " applied!</span>";
+            }
+            else if (string.IsNullOrEmpty(code))
+            {
+                PromoMessageLiteral.Text = "<span style='color:#dc2626;font-size:var(--text-sm)'>Enter a promo code first.</span>";
+            }
+            else
+            {
+                PromoMessageLiteral.Text = "<span style='color:#dc2626;font-size:var(--text-sm)'>Invalid promo code.</span>";
+            }
+        }
+
+
+        // PART A: Sends the user to Checkout.aspx with the cart intact.
+        protected void CheckoutBtn_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("~/Checkout.aspx", false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         protected void CartRepeater_ItemCommand(object source, RepeaterCommandEventArgs e)
@@ -121,21 +179,15 @@ namespace OrbitechWeb
             }
             else if (e.CommandName == "Increase")
             {
-                // CommandArgument format: "cartItemId|currentQuantity"
                 string[] args = e.CommandArgument.ToString().Split('|');
-                int cartItemId = Convert.ToInt32(args[0]);
-                int currentQty = Convert.ToInt32(args[1]);
-                service.UpdateCartQuantity(cartItemId, currentQty + 1);
+                service.UpdateCartQuantity(Convert.ToInt32(args[0]), Convert.ToInt32(args[1]) + 1);
             }
             else if (e.CommandName == "Decrease")
             {
                 string[] args = e.CommandArgument.ToString().Split('|');
-                int cartItemId = Convert.ToInt32(args[0]);
-                int currentQty = Convert.ToInt32(args[1]);
-                service.UpdateCartQuantity(cartItemId, currentQty - 1);
+                service.UpdateCartQuantity(Convert.ToInt32(args[0]), Convert.ToInt32(args[1]) - 1);
             }
 
-            // Reload cart after any change
             LoadCart();
         }
     }

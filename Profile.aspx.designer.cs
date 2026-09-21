@@ -11,160 +11,169 @@ namespace OrbitechWeb
 {
 
 
-    public partial class ProductDetails
+    public partial class Profile
     {
 
         /// <summary>
-        /// BreadCrumbLiteral control.
+        /// AvatarLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal BreadCrumbLiteral;
+        protected global::System.Web.UI.WebControls.Literal AvatarLiteral;
 
         /// <summary>
-        /// ProductPanel control.
+        /// UsernameLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel ProductPanel;
+        protected global::System.Web.UI.WebControls.Literal UsernameLiteral;
 
         /// <summary>
-        /// ProductImage control.
+        /// RoleLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Image ProductImage;
+        protected global::System.Web.UI.WebControls.Literal RoleLiteral;
 
         /// <summary>
-        /// CategoryLiteral control.
+        /// MemberSinceLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal CategoryLiteral;
+        protected global::System.Web.UI.WebControls.Literal MemberSinceLiteral;
 
         /// <summary>
-        /// ProductNameLiteral control.
+        /// CustomerViewPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ProductNameLiteral;
+        protected global::System.Web.UI.WebControls.Panel CustomerViewPanel;
 
         /// <summary>
-        /// GradeStarsLiteral control.
+        /// CustOrdersLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal GradeStarsLiteral;
+        protected global::System.Web.UI.WebControls.Literal CustOrdersLiteral;
 
         /// <summary>
-        /// GradeLiteral control.
+        /// CustSpentLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal GradeLiteral;
+        protected global::System.Web.UI.WebControls.Literal CustSpentLiteral;
 
         /// <summary>
-        /// StockLiteral control.
+        /// CustFavsLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal StockLiteral;
+        protected global::System.Web.UI.WebControls.Literal CustFavsLiteral;
 
         /// <summary>
-        /// DescriptionLiteral control.
+        /// CustNoOrdersPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal DescriptionLiteral;
+        protected global::System.Web.UI.WebControls.Panel CustNoOrdersPanel;
 
         /// <summary>
-        /// PriceLiteral control.
+        /// CustOrdersRepeater control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal PriceLiteral;
+        protected global::System.Web.UI.WebControls.Repeater CustOrdersRepeater;
 
         /// <summary>
-        /// BrandLiteral control.
+        /// AdminViewPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal BrandLiteral;
+        protected global::System.Web.UI.WebControls.Panel AdminViewPanel;
 
         /// <summary>
-        /// ColourLiteral control.
+        /// AdminProductsLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ColourLiteral;
+        protected global::System.Web.UI.WebControls.Literal AdminProductsLiteral;
 
         /// <summary>
-        /// ConditionLiteral control.
+        /// AdminOrdersLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ConditionLiteral;
+        protected global::System.Web.UI.WebControls.Literal AdminOrdersLiteral;
 
         /// <summary>
-        /// ProductIdHidden control.
+        /// AdminUsersLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.HiddenField ProductIdHidden;
+        protected global::System.Web.UI.WebControls.Literal AdminUsersLiteral;
 
         /// <summary>
-        /// QtyInput control.
+        /// AdminRevenueLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox QtyInput;
+        protected global::System.Web.UI.WebControls.Literal AdminRevenueLiteral;
 
         /// <summary>
-        /// AddToCartBtn control.
+        /// AdminOrdersRepeater control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button AddToCartBtn;
+        protected global::System.Web.UI.WebControls.Repeater AdminOrdersRepeater;
 
         /// <summary>
-        /// NotFoundPanel control.
+        /// NoLowStockPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel NotFoundPanel;
+        protected global::System.Web.UI.WebControls.Panel NoLowStockPanel;
+
+        /// <summary>
+        /// LowStockRepeater control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater LowStockRepeater;
     }
 }

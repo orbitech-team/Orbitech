@@ -104,7 +104,7 @@
 
       <!-- TUTORIAL STEP: Featured products loaded from database.
            The Repeater generates product cards from the top 8 products. -->
-      <div class="product-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap: var(--s5);">
+      <div class="product-grid">
         <asp:Repeater ID="FeaturedRepeater" runat="server">
           <ItemTemplate>
             <article class="product-card">
@@ -128,7 +128,7 @@
   <!-- VALUE PROPS -->
   <section class="section">
     <div class="container">
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap: var(--s5);">
+      <div class="value-grid">
         <div style="padding:var(--s6); background:var(--bg); border-radius:var(--r);">
           <div style="font-size:28px; margin-bottom:var(--s3)">&#9889;</div>
           <h3 style="font-size:var(--text-md); margin-bottom:var(--s2)">Free SA Delivery</h3>

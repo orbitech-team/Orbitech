@@ -33,15 +33,6 @@ namespace OrbitechWeb
         protected global::System.Web.UI.HtmlControls.HtmlForm form1;
 
         /// <summary>
-        /// AdminDrawerLiteral control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminDrawerLiteral;
-
-        /// <summary>
         /// AdminHeaderLiteral control.
         /// </summary>
         /// <remarks>
@@ -58,6 +49,24 @@ namespace OrbitechWeb
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Panel AccountPanel;
+
+        /// <summary>
+        /// AccountLiteral control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal AccountLiteral;
+
+        /// <summary>
+        /// CartCountBadge control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl CartCountBadge;
 
         /// <summary>
         /// AdminNavLiteral control.

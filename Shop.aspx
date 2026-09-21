@@ -1,19 +1,3 @@
-<%-- ============================================================
-     Shop.aspx — Product Listing Page (Database-Driven)
-     ============================================================
-     TUTORIAL STEP: This page replaces shop.html. Instead of hardcoded
-     HTML product cards, it loads products from the database via the
-     WCF service and generates the cards dynamically using a Repeater control.
-
-     Key differences from the original shop.html:
-       1. Uses a Repeater control to generate product cards from DB data
-       2. Reads the "cat" query string to filter by category
-       3. Reads the "search" query string to search products
-       4. All links use ResolveUrl for correct paths
-
-     PLACE THIS FILE IN: OrbitechWeb/Shop.aspx
-     ============================================================ --%>
-
 <%@ Page Title="Shop Tech — OrbiTech" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Shop.aspx.cs" Inherits="OrbitechWeb.Shop" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
@@ -36,46 +20,59 @@
     <div class="container">
       <div class="shop-layout">
 
-        <!-- ==================== FILTERS SIDEBAR ==================== -->
-        <!-- TUTORIAL STEP: The filter links now pass category as a query parameter -->
+        <!-- FILTERS SIDEBAR: all blocks are rendered by code-behind
+             into Literals so every link preserves the other active
+             filters (e.g. switching brand keeps your category). -->
         <aside class="filters" aria-label="Filters">
           <div class="filter-block">
             <h3>Category</h3>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx") %>' style="text-decoration:none; color:inherit;">All Products</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Phone") %>' style="text-decoration:none; color:inherit;">Cellphones</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>' style="text-decoration:none; color:inherit;">Tablets</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>' style="text-decoration:none; color:inherit;">Smartwatches</a></label>
+            <asp:Literal ID="CategoryFiltersLiteral" runat="server" />
           </div>
           <div class="filter-block">
-            <h3>Price range</h3>
-            <div style="display:flex; justify-content:space-between; font-family:var(--ff-mono); font-size:11px; color:var(--fg-mute)"><span>R199</span><span>R26,000</span></div>
-            <div class="range-bar" aria-hidden="true"></div>
+            <h3>Price range (R)</h3>
+            <div class="price-filter">
+              <asp:TextBox ID="MinPriceInput" runat="server" placeholder="Min" inputmode="numeric" />
+              <span class="dash">&ndash;</span>
+              <asp:TextBox ID="MaxPriceInput" runat="server" placeholder="Max" inputmode="numeric" />
+            </div>
+            <asp:Button ID="ApplyPriceBtn" runat="server" Text="Apply price" CssClass="btn btn--ghost btn--sm" OnClick="ApplyPriceBtn_Click" />
           </div>
           <div class="filter-block">
             <h3>Condition</h3>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?condition=New") %>' style="text-decoration:none; color:inherit;">Brand New</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?condition=Refurbished") %>' style="text-decoration:none; color:inherit;">Certified Pre-Owned</a></label>
+            <asp:Literal ID="ConditionFiltersLiteral" runat="server" />
           </div>
+          <div class="filter-block">
+            <h3>Brand</h3>
+            <asp:Literal ID="BrandFiltersLiteral" runat="server" />
+          </div>
+          <div class="filter-block">
+            <h3>Grade</h3>
+            <asp:Literal ID="GradeFiltersLiteral" runat="server" />
+          </div>
+          <asp:Literal ID="ClearFiltersLiteral" runat="server" />
         </aside>
 
-        <!-- ==================== PRODUCT GRID ==================== -->
+        <!-- PRODUCT GRID -->
         <div>
           <div class="shop-toolbar">
-            <!-- TUTORIAL STEP: Shows the count of products found -->
             <span class="count">
               <asp:Literal ID="ProductCountLiteral" runat="server" Text="Loading products..." />
             </span>
+            <label class="sort-wrap">Sort:
+              <asp:DropDownList ID="SortDropDown" runat="server" AutoPostBack="true" OnSelectedIndexChanged="SortDropDown_SelectedIndexChanged">
+                <asp:ListItem Value="" Text="Featured" />
+                <asp:ListItem Value="price-asc" Text="Price: Low to High" />
+                <asp:ListItem Value="price-desc" Text="Price: High to Low" />
+                <asp:ListItem Value="name-asc" Text="Name: A to Z" />
+              </asp:DropDownList>
+            </label>
           </div>
 
-          <!-- TUTORIAL STEP: The Repeater control generates one product card per product
-               returned from the database. The ItemTemplate defines the HTML for each card.
-               <%# Eval("FieldName") %> inserts the database value at that position. -->
           <div class="shop-grid">
             <asp:Repeater ID="ProductRepeater" runat="server">
               <ItemTemplate>
                 <article class="product-card">
                   <div class="img-wrap">
-                    <!-- Badge shows condition (New or Refurbished) -->
                     <span class='<%# Eval("Condition").ToString() == "New" ? "badge" : "badge badge--refurb" %>'>
                       <%# Eval("Condition") %>
                     </span>
@@ -86,7 +83,6 @@
                     <%# Convert.ToInt32(Eval("Quantity")) > 0 ? "In stock" : "Out of stock" %>
                     &middot; <%# Eval("Brand") %>
                   </div>
-                  <!-- Link to product detail page with product ID -->
                   <a href='<%# ResolveUrl("~/ProductDetails.aspx?id=") + Eval("ProductID") %>' class="name">
                     <%# Eval("Name") %>
                   </a>
@@ -103,9 +99,8 @@
             </asp:Repeater>
           </div>
 
-          <!-- TUTORIAL STEP: Shows a message when no products are found -->
           <asp:Panel ID="NoResultsPanel" runat="server" Visible="false" style="padding: var(--s9); text-align: center;">
-            <p style="font-size: var(--text-lg); color: var(--fg-mute);">No products found. Try a different category or search term.</p>
+            <p style="font-size: var(--text-lg); color: var(--fg-mute);">No products found. Try a different filter combination.</p>
           </asp:Panel>
         </div>
 

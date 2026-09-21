@@ -62,10 +62,12 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Pages -->
+    <Content Include="Checkout.aspx" />
     <Content Include="Default.aspx" />
     <Content Include="assets\css\styles.css" />
     <Content Include="assets\js\main.js" />
     <Content Include="Logout.aspx" />
+    <Content Include="Profile.aspx" />
     <Content Include="Shop.aspx" />
     <Content Include="ProductDetails.aspx" />
     <Content Include="Cart.aspx" />
@@ -87,6 +89,13 @@
     <Compile Include="Cart.aspx.designer.cs">
       <DependentUpon>Cart.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Checkout.aspx.cs">
+      <DependentUpon>Checkout.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Checkout.aspx.designer.cs">
+      <DependentUpon>Checkout.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Contact.aspx.designer.cs">
       <DependentUpon>Contact.aspx</DependentUpon>
     </Compile>
@@ -107,9 +116,21 @@
     <Compile Include="Logout.aspx.designer.cs">
       <DependentUpon>Logout.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Models\AdminDashboardStats.cs" />
     <Compile Include="Models\CartItem.cs" />
+    <Compile Include="Models\Order.cs" />
+    <Compile Include="Models\OrderItem.cs" />
+    <Compile Include="Models\OrderTotals.cs" />
+    <Compile Include="Models\ProfileStats.cs" />
     <Compile Include="ProductDetails.aspx.designer.cs">
       <DependentUpon>ProductDetails.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Profile.aspx.cs">
+      <DependentUpon>Profile.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Profile.aspx.designer.cs">
+      <DependentUpon>Profile.aspx</DependentUpon>
     </Compile>
     <Compile Include="Register.aspx.designer.cs">
       <DependentUpon>Register.aspx</DependentUpon>
