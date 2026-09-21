@@ -57,7 +57,7 @@ namespace OrbitechWeb.Services
 
                 string hashedPassword = PasswordHelper.HashPassword(password);
 
-                string insertQuery = "INSERT INTO ORBI_USER (u_Username, u_PasswordHash) VALUES (@Username, @PasswordHash)";
+                string insertQuery = "INSERT INTO ORBI_USER (u_Username, u_PasswordHash, , u_RegisteredDate) VALUES (@Username, @PasswordHash, GETDATE())";
                 SqlCommand insertCmd = new SqlCommand(insertQuery, conn);
                 insertCmd.Parameters.AddWithValue("@Username", username);
                 insertCmd.Parameters.AddWithValue("@PasswordHash", hashedPassword);
@@ -654,6 +654,431 @@ namespace OrbitechWeb.Services
 
             return ids;
         }
+
+
+
+        // PART A: Valid promo codes. Later you could swap this for a
+        // PROMO_CODE database table - the rest of the code would not change.
+        private bool IsValidPromo(string code)
+        {
+            return code != null && code.Trim().ToUpper() == "STUDENT15";
+        }
+
+        // PART A: The core checkout action. Everything below runs inside
+        // a SqlTransaction - if ANY step fails, the whole thing rolls back.
+        // That prevents half-completed orders (e.g. order created but stock
+        // not decremented).
+        public int PlaceOrder(string username, string promoCode)
+        {
+            int userId = GetUserId(username);
+            if (userId == -1) return -1;
+
+            int cartId = GetOrCreateCart(userId);
+            List<CartItem> items = GetCartItems(username);
+            if (items.Count == 0) return -1;
+
+            OrderTotals totals = CalculateOrderTotals(items, promoCode);
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+                SqlTransaction tx = conn.BeginTransaction();
+                try
+                {
+                    // STEP 1: Insert the order header row
+                    int orderId;
+                    string insertOrder = @"INSERT INTO ORBI_ORDER
+                        (u_ID, o_Subtotal, o_Discount, o_Shipping, o_Tax, o_Total, o_PromoCode, o_Status)
+                        VALUES (@UserID, @Subtotal, @Discount, @Shipping, @Tax, @Total, @Promo, 'Placed');
+                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                    using (SqlCommand cmd = new SqlCommand(insertOrder, conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@UserID", userId);
+                        cmd.Parameters.AddWithValue("@Subtotal", totals.Subtotal);
+                        cmd.Parameters.AddWithValue("@Discount", totals.Discount);
+                        cmd.Parameters.AddWithValue("@Shipping", totals.Shipping);
+                        cmd.Parameters.AddWithValue("@Tax", totals.Tax);
+                        cmd.Parameters.AddWithValue("@Total", totals.Total);
+                        cmd.Parameters.AddWithValue("@Promo", (object)totals.PromoCode ?? DBNull.Value);
+                        orderId = (int)cmd.ExecuteScalar();
+                    }
+
+                    // STEP 2: One ORDER_ITEM row per cart item + stock decrement.
+                    // We SNAPSHOT the price (oi_UnitPrice) instead of joining back later.
+                    foreach (CartItem item in items)
+                    {
+                        string insertItem = @"INSERT INTO ORDER_ITEM
+                            (o_ID, p_ID, oi_Quantity, oi_UnitPrice)
+                            VALUES (@OrderID, @ProductID, @Qty, @UnitPrice)";
+                        using (SqlCommand cmd = new SqlCommand(insertItem, conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@OrderID", orderId);
+                            cmd.Parameters.AddWithValue("@ProductID", item.ProductID);
+                            cmd.Parameters.AddWithValue("@Qty", item.Quantity);
+                            cmd.Parameters.AddWithValue("@UnitPrice", item.ProductPrice);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // Decrease stock so Reports' "stock on hand" is accurate.
+                        string updateStock = "UPDATE ORBI_PRODUCT SET p_Quantity = p_Quantity - @Qty WHERE p_ID = @ProductID";
+                        using (SqlCommand cmd = new SqlCommand(updateStock, conn, tx))
+                        {
+                            cmd.Parameters.AddWithValue("@Qty", item.Quantity);
+                            cmd.Parameters.AddWithValue("@ProductID", item.ProductID);
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    // STEP 3: Generate the invoice row.
+                    // Format: INV-2026-0001 (year + order id padded to 4 digits).
+                    string invoiceNumber = "INV-" + DateTime.Now.Year + "-" + orderId.ToString("D4");
+                    string insertInvoice = "INSERT INTO INVOICE (o_ID, inv_Number) VALUES (@OrderID, @InvoiceNumber)";
+                    using (SqlCommand cmd = new SqlCommand(insertInvoice, conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@OrderID", orderId);
+                        cmd.Parameters.AddWithValue("@InvoiceNumber", invoiceNumber);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // STEP 4: Empty the customer's cart.
+                    string clearCart = "DELETE FROM CART_ITEM WHERE ct_ID = @CartID";
+                    using (SqlCommand cmd = new SqlCommand(clearCart, conn, tx))
+                    {
+                        cmd.Parameters.AddWithValue("@CartID", cartId);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    // All 4 steps succeeded. Make it permanent.
+                    tx.Commit();
+                    return orderId;
+                }
+                catch
+                {
+                    // Something failed above. Undo EVERYTHING so we never
+                    // leave a half-created order in the database.
+                    tx.Rollback();
+                    return -1;
+                }
+            }
+        }
+
+        // PART A: Full order incl. invoice number. Member B's invoice
+        // pages will reuse this same method.
+        public Order GetOrderById(int orderId)
+        {
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT o.o_ID, o.u_ID, o.o_Date, o.o_Subtotal, o.o_Discount,
+                                o.o_Shipping, o.o_Tax, o.o_Total, o.o_PromoCode, o.o_Status,
+                                i.inv_Number, u.u_Username
+                                FROM ORBI_ORDER o
+                                INNER JOIN INVOICE i ON o.o_ID = i.o_ID
+                                INNER JOIN ORBI_USER u ON o.u_ID = u.u_ID
+                                WHERE o.o_ID = @OrderID";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@OrderID", orderId);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                if (!reader.Read()) return null;
+
+                Order order = new Order
+                {
+                    OrderID = Convert.ToInt32(reader["o_ID"]),
+                    UserID = Convert.ToInt32(reader["u_ID"]),
+                    Username = reader["u_Username"].ToString(),
+                    OrderDate = Convert.ToDateTime(reader["o_Date"]),
+                    Subtotal = Convert.ToDecimal(reader["o_Subtotal"]),
+                    Discount = Convert.ToDecimal(reader["o_Discount"]),
+                    Shipping = Convert.ToDecimal(reader["o_Shipping"]),
+                    Tax = Convert.ToDecimal(reader["o_Tax"]),
+                    Total = Convert.ToDecimal(reader["o_Total"]),
+                    PromoCode = reader["o_PromoCode"] != DBNull.Value ? reader["o_PromoCode"].ToString() : "",
+                    Status = reader["o_Status"].ToString(),
+                    InvoiceNumber = reader["inv_Number"].ToString()
+                };
+
+                reader.Close();
+                order.Items = GetOrderItems(orderId);
+                return order;
+            }
+        }
+
+        public List<OrderItem> GetOrderItems(int orderId)
+        {
+            List<OrderItem> items = new List<OrderItem>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT oi.oi_ID, oi.p_ID, oi.oi_Quantity, oi.oi_UnitPrice,
+                                p.p_Name, p.p_ImageURL
+                                FROM ORDER_ITEM oi
+                                INNER JOIN ORBI_PRODUCT p ON oi.p_ID = p.p_ID
+                                WHERE oi.o_ID = @OrderID
+                                ORDER BY oi.oi_ID";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@OrderID", orderId);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    decimal unitPrice = Convert.ToDecimal(reader["oi_UnitPrice"]);
+                    int qty = Convert.ToInt32(reader["oi_Quantity"]);
+
+                    items.Add(new OrderItem
+                    {
+                        OrderItemID = Convert.ToInt32(reader["oi_ID"]),
+                        ProductID = Convert.ToInt32(reader["p_ID"]),
+                        ProductName = reader["p_Name"].ToString(),
+                        ProductImage = reader["p_ImageURL"].ToString(),
+                        Quantity = qty,
+                        UnitPrice = unitPrice,
+                        LineTotal = unitPrice * qty
+                    });
+                }
+            }
+            return items;
+        }
+
+        // PART A: Member B needs this for MyInvoices.aspx.
+        public List<Order> GetOrdersForUser(string username)
+        {
+            List<Order> orders = new List<Order>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT o.o_ID, i.inv_Number, o.o_Date, o.o_Total, o.o_Status
+                                FROM ORBI_ORDER o
+                                INNER JOIN INVOICE i ON o.o_ID = i.o_ID
+                                INNER JOIN ORBI_USER u ON o.u_ID = u.u_ID
+                                WHERE u.u_Username = @Username
+                                ORDER BY o.o_Date DESC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Username", username);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    orders.Add(new Order
+                    {
+                        OrderID = Convert.ToInt32(reader["o_ID"]),
+                        InvoiceNumber = reader["inv_Number"].ToString(),
+                        OrderDate = Convert.ToDateTime(reader["o_Date"]),
+                        Total = Convert.ToDecimal(reader["o_Total"]),
+                        Status = reader["o_Status"].ToString()
+                    });
+                }
+            }
+            return orders;
+        }
+
+
+        public OrderTotals CalculateOrderTotals(List<CartItem> items, string promoCode)
+        {
+            decimal subtotal = 0;
+
+            foreach (CartItem item in items)
+            {
+                subtotal += item.LineTotal;
+            }
+            OrderTotals orderTotal = new OrderTotals();
+
+            orderTotal.Subtotal = subtotal;
+
+            // --- Rule 3: Promo code discount ---
+            if (!string.IsNullOrEmpty(promoCode) && IsValidPromo(promoCode))
+            {
+                orderTotal.PromoCode = promoCode.ToUpper();
+                orderTotal.PromoApplied = true;
+                orderTotal.Discount = Math.Round(subtotal * 0.15m, 2);
+            }
+
+            // --- Rule 2: Free shipping over R1000 (after discount), else R100 flat ---
+            decimal afterDiscount = subtotal - orderTotal.Discount;
+            orderTotal.Shipping = afterDiscount >= 1000m ? 0m : 100m;
+
+            // --- Rule 1: VAT 15% on the discounted amount ---
+            orderTotal.Tax = Math.Round(afterDiscount * 0.15m, 2);
+
+            // Grand total: goods - discount + shipping + VAT
+            orderTotal.Total = afterDiscount + orderTotal.Shipping + orderTotal.Tax;
+
+            return orderTotal;
+        }
+
+        // ============================================================
+        // PHASE 3: PROFILE METHODS
+        // ============================================================
+
+        // PHASE 3: Customer activity stats. FavouriteCount is wrapped in
+        // try/catch because the FAVOURITE table is built by a teammate in
+        // parallel (Phase 2). Until their merge lands, the count reads 0
+        // instead of crashing the whole profile page.
+        public ProfileStats GetProfileStats(string username)
+        {
+            ProfileStats stats = new ProfileStats();
+            stats.Username = username;
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                // Personal orders + lifetime spend (one query, two aggregates)
+                string orderQuery = @"SELECT COUNT(*) AS OrderCount,
+                                        ISNULL(SUM(o_Total), 0) AS TotalSpent,
+                                        MIN(u_RegisteredDate) AS MemberSince
+                                        FROM ORBI_ORDER o
+                                        INNER JOIN ORBI_USER u ON o.u_ID = u.u_ID
+                                        WHERE u.u_Username = @Username";
+                using (SqlCommand cmd = new SqlCommand(orderQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Username", username);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            stats.TotalOrders = Convert.ToInt32(reader["OrderCount"]);
+                            stats.TotalSpent = Convert.ToDecimal(reader["TotalSpent"]);
+                            if (reader["MemberSince"] != DBNull.Value)
+                                stats.MemberSince = Convert.ToDateTime(reader["MemberSince"]);
+                        }
+                    }
+                }
+
+                // Favourites count - table owned by Phase 2, may not exist yet
+                try
+                {
+                    string favQuery = @"SELECT COUNT(*) FROM FAVOURITE f
+                                        INNER JOIN ORBI_USER u ON f.u_ID = u.u_ID
+                                        WHERE u.u_Username = @Username";
+                    using (SqlCommand cmd = new SqlCommand(favQuery, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@Username", username);
+                        stats.FavouriteCount = Convert.ToInt32(cmd.ExecuteScalar());
+                    }
+                }
+                catch
+                {
+                    // FAVOURITE table not created yet - count stays 0.
+                    // This catch disappears once Phase 2 merges.
+                    stats.FavouriteCount = 0;
+                }
+            }
+            return stats;
+        }
+
+        // PHASE 3: The four admin KPI tiles. Four scalar queries, one method,
+        // so the page makes one service call instead of four.
+        public AdminDashboardStats GetAdminDashboardStats()
+        {
+            AdminDashboardStats stats = new AdminDashboardStats();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                stats.TotalProducts = Convert.ToInt32(
+                    new SqlCommand("SELECT COUNT(*) FROM ORBI_PRODUCT", conn).ExecuteScalar());
+
+                stats.TotalOrders = Convert.ToInt32(
+                    new SqlCommand("SELECT COUNT(*) FROM ORBI_ORDER", conn).ExecuteScalar());
+
+                stats.TotalUsers = Convert.ToInt32(
+                    new SqlCommand("SELECT COUNT(*) FROM ORBI_USER", conn).ExecuteScalar());
+
+                stats.TotalRevenue = Convert.ToDecimal(
+                    new SqlCommand("SELECT ISNULL(SUM(o_Total), 0) FROM ORBI_ORDER", conn).ExecuteScalar());
+            }
+            return stats;
+        }
+
+        // PHASE 3: Latest N orders across ALL users (admin view).
+        // SELECT TOP with a parameter - SQL Server allows @Count in TOP,
+        // which keeps the limit from being string-concatenated.
+        public List<Order> GetRecentOrders(int count)
+        {
+            List<Order> orders = new List<Order>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT TOP (@Count)
+                                o.o_ID, u.u_Username, i.inv_Number,
+                                o.o_Date, o.o_Total, o.o_Status
+                                FROM ORBI_ORDER o
+                                INNER JOIN ORBI_USER u ON o.u_ID = u.u_ID
+                                INNER JOIN INVOICE i ON o.o_ID = i.o_ID
+                                ORDER BY o.o_Date DESC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Count", count);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    orders.Add(new Order
+                    {
+                        OrderID = Convert.ToInt32(reader["o_ID"]),
+                        Username = reader["u_Username"].ToString(),
+                        InvoiceNumber = reader["inv_Number"].ToString(),
+                        OrderDate = Convert.ToDateTime(reader["o_Date"]),
+                        Total = Convert.ToDecimal(reader["o_Total"]),
+                        Status = reader["o_Status"].ToString()
+                    });
+                }
+            }
+            return orders;
+        }
+
+        // PHASE 3: Low-stock alert list for the admin dashboard.
+        // Threshold 3 - tune to taste, but keep it a constant here,
+        // one place to change.
+        public List<Product> GetLowStockProducts()
+        {
+            List<Product> products = new List<Product>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT p_ID, p_Name, p_Price, p_Quantity, p_ImageURL,
+                                p_Brand, p_Condition, p_Grade
+                                FROM ORBI_PRODUCT
+                                WHERE p_Quantity <= 3
+                                ORDER BY p_Quantity ASC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+
+                conn.Open();
+                SqlDataReader reader = cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    products.Add(new Product
+                    {
+                        ProductID = Convert.ToInt32(reader["p_ID"]),
+                        Name = reader["p_Name"].ToString(),
+                        Price = Convert.ToDecimal(reader["p_Price"]),
+                        Quantity = Convert.ToInt32(reader["p_Quantity"]),
+                        ImageURL = reader["p_ImageURL"].ToString(),
+                        Brand = reader["p_Brand"].ToString(),
+                        Condition = reader["p_Condition"].ToString(),
+                        Grade = reader["p_Grade"].ToString()
+                    });
+                }
+            }
+            return products;
+        }
+
+
 
     }
 }

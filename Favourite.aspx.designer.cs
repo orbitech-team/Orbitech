@@ -1,26 +1,14 @@
-﻿namespace OrbitechWeb
+﻿
+namespace OrbitechWeb
 {
 
 
     public partial class Favourite
     {
 
-        /// <summary>
-        /// FavouritesRepeater control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater FavouritesRepeater;
 
-        /// <summary>
-        /// EmptyPanel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
+
         protected global::System.Web.UI.WebControls.Panel EmptyPanel;
     }
 }

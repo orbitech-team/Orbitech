@@ -82,6 +82,39 @@ namespace OrbitechWeb.Services
 
         [OperationContract]
         List<int> GetFavouritedProductIds(string username);
+        // === PART A: CHECKOUT + ORDERS ===
+
+        [OperationContract]
+        OrderTotals CalculateOrderTotals(List<CartItem> items, string promoCode);
+
+        [OperationContract]
+        int PlaceOrder(string username, string promoCode);
+
+        [OperationContract]
+        Order GetOrderById(int orderId);
+
+        [OperationContract]
+        List<OrderItem> GetOrderItems(int orderId);
+
+        [OperationContract]
+        List<Order> GetOrdersForUser(string username);
+
+        // === PHASE 3: PROFILE ===
+
+        [OperationContract]
+        ProfileStats GetProfileStats(string username);
+
+        [OperationContract]
+        AdminDashboardStats GetAdminDashboardStats();
+
+        [OperationContract]
+        List<Order> GetRecentOrders(int count);
+
+        [OperationContract]
+        List<Product> GetLowStockProducts();
+
+
+
 
 
     }

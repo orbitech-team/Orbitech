@@ -2,6 +2,10 @@
    ORBITECH — Your Tech, In Orbit
    Refined for Software Engineering Project Proposal
    South African B2C Portable Tech Store
+   -------------------------------------------------------------
+   VERSION v9 — 21 Sept 2026 (shop filter system + sort dropdown styles)
+   VERIFY THIS FILE LANDED: Ctrl+F for "v9-SPRINT" in Notepad.
+   If it is not there, the browser/VS is still on an old copy.
    ============================================================= */
 
 /* ---------- Tokens ---------- */
@@ -47,6 +51,15 @@
   --amber: #f59e0b;
   --rule: #e2e8f0;
   --rule-strong: #cbd5e1;
+
+  /* PHASE 5 FIX: alias tokens. Several pages reference --fg-mute /
+     --fg-soft in their own <style> blocks and inline styles, but
+     these tokens were never defined, so every muted text color on
+     those pages silently fell back to inherited color. Defining them
+     here fixes Login, Register, Shop, Contact, Checkout, Default
+     and AdminProducts in one shot. */
+  --fg-mute: var(--ink-mute);
+  --fg-soft: var(--ink-mute);
 
   /* type */
   --ff-display:
@@ -111,6 +124,14 @@ html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   background: var(--paper);
+  /* v8: hard lockdown. If ANY element (e.g. an overloaded admin
+     header row) is ever wider than the viewport, this clips the
+     overflow instead of letting it widen the whole document --
+     which is what was making every other section look like it
+     "doesn't reach full width" (you were seeing a partial slice
+     of an oversized canvas). */
+  overflow-x: hidden;
+  max-width: 100%;
 }
 body {
   margin: 0;
@@ -120,6 +141,9 @@ body {
   color: var(--ink);
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100%;
+  position: relative;
 }
 h1,
 h2,
@@ -270,6 +294,32 @@ svg {
 .icon-row {
   display: flex;
   gap: var(--s2);
+  /* v7: allows the row to shrink below content size when the
+     account menu + admin links appear (logged-in state). Without
+     this, flex items refuse to shrink and the header overflows
+     the viewport on phones. */
+  min-width: 0;
+  flex-shrink: 1;
+  /* defensive: if the nested duplicate .icon-row is ever still in
+     the master markup, neutralise the double gap */
+  flex-wrap: nowrap;
+}
+.icon-row > * {
+  flex-shrink: 0;
+}
+/* v8: any plain text link in the icon row (e.g. an "Admin Panel"
+   link) ellipsizes instead of forcing the row wider. */
+.icon-row > a:not(.icon-btn) {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+}
+.icon-row > .icon-row {
+  /* nested duplicate container (Site.Master editing accident):
+   * make it transparent to the layout instead of a double flex box */
+  display: contents;
 }
 .icon-btn {
   width: 42px;
@@ -294,6 +344,62 @@ svg {
   padding: 2px 6px;
   border-radius: 999px;
   border: 2px solid var(--paper);
+}
+
+/* ---------- Header account menu (logged in / logged out) ---------- */
+/* Replaces the old .icon-btn class on AccountPanel: a single 42px
+   circle was designed for ONE icon, but the logged-in state needs an
+   icon + username + two links, which broke out of the circle and
+   stacked awkwardly. .account-menu is sized to its content instead. */
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  height: 42px;
+  padding: 0 var(--s4);
+  border-radius: 999px;
+  background: var(--bg);
+  white-space: nowrap;
+  transition: background 180ms var(--ease);
+}
+.account-menu:hover {
+  background: var(--primary-soft);
+}
+.account-trigger {
+  /* v7 base extends below */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink);
+}
+.account-trigger:hover {
+  color: var(--primary);
+}
+.account-trigger span {
+  /* v7: long usernames ellipsize instead of stretching the header */
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account-trigger svg {
+  flex-shrink: 0;
+}
+.account-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--rule-strong);
+  flex-shrink: 0;
+}
+.account-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-mute);
+}
+.account-link:hover {
+  color: var(--primary);
 }
 
 /* ---------- Navigation ---------- */
@@ -465,6 +571,25 @@ svg {
   width: 30px;
 }
 
+/* PHASE 4 FOLLOW-UP FIX: every bento card EXCEPT the large hero gets
+   its own image treatment - a full-height panel on the right that
+   fades into the card's gradient, instead of the tiny cropped corner
+   thumbnail the shared .bento-card rule produced on these smaller
+   tiles. */
+.bento-card:not(.bento-card--lg) img.product {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: auto;
+  width: 50%;
+  height: 100%;
+  object-fit: cover;
+  filter: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 30%, #000 60%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 30%, #000 60%);
+}
+
 .bento-card--purple {
   background: linear-gradient(135deg, var(--card-purple), var(--card-purple-2));
 }
@@ -529,7 +654,12 @@ svg {
 }
 
 /* ---------- Product Cards ---------- */
-.products {
+.products,
+.shop-grid {
+  /* PHASE 5 FIX: .shop-grid (Shop.aspx product grid) had no grid rule
+     at all — cards rendered as an unstyled stack. It now shares the
+     same responsive auto-fill grid as .products (Default's trending
+     section and the teammate Favourites page). */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--s4);
@@ -549,17 +679,26 @@ svg {
   box-shadow: var(--shadow);
 }
 .product-card .img-wrap {
+  /* PHASE 4 FOLLOW-UP FIX: 4/3 + object-fit:cover was CROPPING tall
+     phone product shots down to a thin horizontal band — the phone
+     itself barely showed. Square box + object-fit:contain + padding
+     shows the full photo every time, letterboxed on a neutral
+     background instead of cropped. */
   aspect-ratio: 1;
+  max-height: 200px;
   background: var(--bg);
   border-radius: var(--r-sm);
-  margin-bottom: var(--s4);
+  margin-bottom: var(--s3);
+  padding: var(--s4);
   position: relative;
   overflow: hidden;
 }
 .product-card .img-wrap img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* was object-fit: cover — the actual bug. cover crops to fill the
+     box; contain scales the whole image down to fit inside it. */
+  object-fit: contain;
   transition: transform 500ms var(--ease);
 }
 .product-card:hover .img-wrap img {
@@ -613,15 +752,26 @@ svg {
   background: var(--emerald);
 }
 .product-card .name {
+  /* PHASE 4: clamp to 2 lines. One-line and three-line product names used
+     to push the price/button rows out of alignment between neighbouring
+     cards; with a fixed 2-line block every card's bottom section lines up. */
   font-weight: 700;
   font-size: var(--text-sm);
-  margin-bottom: 8px;
-  display: block;
+  line-height: 1.3;
+  min-height: 34px;
+  margin-bottom: var(--s3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   color: var(--ink);
 }
 .product-card .price {
+  /* PHASE 4: margin-bottom:auto pushes the button to the card bottom and
+     pins the price block just under the text — consistent on every card. */
   display: flex;
   align-items: baseline;
+  margin-bottom: var(--s3);
 }
 .product-card .price .now {
   font-weight: 800;
@@ -837,6 +987,15 @@ svg {
   background: var(--bg);
   margin: 0;
 }
+/* v6 FIX: no img rule existed. Contain + max-height keeps tall
+   product photos a sane size on every screen. */
+.gallery-main img {
+  width: 100%;
+  height: 100%;
+  max-height: 560px;
+  object-fit: contain;
+  padding: var(--s4);
+}
 .pdp-info .pdp-cat {
   font-family: var(--ff-mono);
   font-size: 11px;
@@ -997,6 +1156,14 @@ svg {
   border-radius: 6px;
   overflow: hidden;
 }
+/* v6 FIX: this img rule did not exist — cart thumbnails were
+   unconstrained. Contain-fit shows the whole device. */
+.cart-row .pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
 .cart-row .info .name {
   font-weight: 700;
   font-size: var(--text-sm);
@@ -1033,6 +1200,9 @@ svg {
 }
 .promo-input input {
   flex: 1;
+  min-width: 0; /* v6: flex items refuse to shrink below content size
+                   by default; without this the promo field can force
+                   horizontal scroll on narrow screens */
   padding: 10px 16px;
   border: 1px solid var(--rule-strong);
   border-radius: 6px;
@@ -1160,6 +1330,253 @@ svg {
   border-bottom: 1px solid var(--rule);
 }
 
+/* === PHASE 3: PROFILE === */
+.profile-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--s5);
+    flex-wrap: wrap;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    padding: var(--s6);
+    margin-bottom: var(--s7)
+}
+
+.profile-id {
+    display: flex;
+    align-items: center;
+    gap: var(--s4)
+}
+
+.avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    display: grid;
+    place-items: center;
+    font-family: var(--ff-display);
+    font-size: 24px;
+    font-weight: 700
+}
+
+.profile-name {
+    font-family: var(--ff-display);
+    font-weight: 600;
+    font-size: var(--text-lg);
+    color: var(--ink)
+}
+
+.profile-role {
+    margin-top: 2px
+}
+
+.role-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-family: var(--ff-mono);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534
+}
+
+.role-badge--admin {
+    background: #e0e7ff;
+    color: #3730a3
+}
+
+.profile-since {
+    font-size: var(--text-sm);
+    color: var(--ink-mute);
+    margin-top: 4px
+}
+
+.profile-actions {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap
+}
+
+.profile-h2 {
+    font-family: var(--ff-display);
+    font-size: var(--text-lg);
+    color: var(--ink);
+    margin: var(--s7) 0 var(--s4)
+}
+
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
+    gap: var(--s4)
+}
+
+.stat-tile {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    padding: var(--s5)
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--ink-mute)
+}
+
+.stat-num {
+    font-family: var(--ff-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: var(--s2)
+}
+
+.order-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    padding: var(--s4) 0;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap
+}
+
+.order-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 160px
+}
+
+.order-inv {
+    font-family: var(--ff-mono);
+    font-size: var(--text-sm);
+    color: var(--ink);
+    font-weight: 600
+}
+
+.order-date {
+    font-size: var(--text-sm);
+    color: var(--ink-mute)
+}
+
+.order-user {
+    font-size: var(--text-sm);
+    color: var(--ink-mute);
+    min-width: 100px
+}
+
+.order-status {
+    font-family: var(--ff-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #166534
+}
+
+.order-total {
+    margin-left: auto;
+    font-family: var(--ff-display);
+    font-weight: 600;
+    color: var(--ink)
+}
+
+.lowstock-list {
+    display: grid;
+    gap: var(--s3)
+}
+
+.lowstock-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s4);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    padding: var(--s3) var(--s4);
+    text-decoration: none
+}
+
+    .lowstock-row .pic img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border-radius: var(--r-sm)
+    }
+
+    .lowstock-row .info {
+        display: flex;
+        flex-direction: column
+    }
+
+    .lowstock-row .name {
+        font-size: var(--text-sm);
+        font-weight: 600;
+        color: var(--ink)
+    }
+
+    .lowstock-row .variant {
+        font-size: var(--text-sm);
+        color: var(--ink-mute)
+    }
+
+.stock-warn {
+    margin-left: auto;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: #b45309
+}
+
+@media(max-width:800px) {
+    .profile-card {
+        flex-direction: column;
+        align-items: flex-start
+    }
+
+    .profile-actions {
+        width: 100%
+    }
+
+    .order-total {
+        margin-left: 0
+    }
+
+    .order-user {
+        min-width: 0
+    }
+
+    .lowstock-row {
+        flex-wrap: wrap
+    }
+
+    .stock-warn {
+        margin-left: 0;
+        width: 100%
+    }
+}
+
+@media(max-width:480px) {
+    .stat-tiles {
+        grid-template-columns: 1fr 1fr
+    }
+
+    .stat-num {
+        font-size: 22px
+    }
+
+    .avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 18px
+    }
+}
+
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1024px) {
   .bento {
@@ -1208,6 +1625,484 @@ svg {
     margin-top: 8px;
     text-align: left;
     width: auto;
+  }
+  .account-menu {
+    padding: 0 var(--s3);
+  }
+  .account-trigger span {
+    max-width: 110px;
+  }
+  .account-sep,
+  .account-link {
+    display: none;
+  }
+  /* PHASE 4: phones get a 2-up product grid instead of one huge card
+     per row — denser, more structured, thumb-sized cards. */
+  .products,
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--s3);
+  }
+  .product-card {
+    padding: var(--s3);
+  }
+  .product-card .img-wrap {
+    max-height: 130px;
+    padding: var(--s3);
+  }
+  .product-card .name {
+    font-size: var(--text-xs);
+    min-height: 30px;
+  }
+  .product-card .price .now {
+    font-size: var(--text-sm);
+  }
+  .product-card .price .was {
+    font-size: 10px;
+  }
+  .product-card .btn {
+    padding: 8px;
+    font-size: var(--text-xs);
+  }
+}
+
+/* ---------- Very small phones: collapse account menu to a matching icon circle ---------- */
+@media (max-width: 420px) {
+  .account-trigger span {
+    display: none;
+  }
+  .account-menu {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    justify-content: center;
+  }
+  /* v8: last-resort safety valve. If the admin link + icons still
+     can't fit on one line even after shrinking everything above,
+     wrap to a second line instead of ever overflowing again. */
+  .site-header .container {
+    flex-wrap: wrap;
+    row-gap: var(--s2);
+  }
+  .icon-row > a:not(.icon-btn) {
+    max-width: 70px;
+  }
+}
+
+/* ---------- PHASE 5: sitewide responsive hardening ---------- */
+/* Applies everywhere, on every page, regardless of specific class
+   names - stops the two most common causes of a horizontal-scroll
+   mobile page: form inputs wider than their container, and tables
+   that don't wrap. */
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
+/* v7: tables stay normal tables on desktop. Only below 900px do
+   they become swipeable blocks — the old always-on block rule plus
+   a min-width pushed admin content wider than the phone viewport,
+   making the whole PAGE scroll sideways. */
+@media (max-width: 900px) {
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* keep admin cells on one line so the swipe has width to scroll */
+  .product-table th,
+  .product-table td {
+    white-space: nowrap;
+  }
+}
+@media (max-width: 480px) {
+  .container {
+    padding: 0 var(--s4);
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  .page-head h1 {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* =============================================================
+   PHASE 5: PAGE-SPECIFIC RESPONSIVE RULES
+   Covers: Shop, Contact, Login, Register, AdminProducts, Default,
+   Checkout and the master footer. Uses !important ONLY where a
+   page-level <style> block loads after this file and would beat
+   these rules at equal specificity.
+   ============================================================= */
+
+/* ---- Shop: stack sidebar above grid on tablets/phones ----
+     v5: breakpoint raised 900 -> 1024 so the 260px sidebar stops
+     squeezing the grid on landscape tablets and small laptops. */
+@media (max-width: 1024px) {
+  .shop-layout {
+    grid-template-columns: 1fr;
+    gap: var(--s5);
+  }
+  .filters {
+    position: static;
+    display: flex;
+    gap: var(--s7);
+    overflow-x: auto;
+    padding: var(--s4);
+    margin-bottom: var(--s3);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r);
+    -webkit-overflow-scrolling: touch;
+  }
+  .filter-block {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 480px) {
+  /* v5: on small phones the filter strip becomes a compact 2-column
+     grid — horizontal scrolling strips are awkward one-handed. */
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s4) var(--s5);
+    overflow-x: visible;
+  }
+}
+
+/* ---- Admin products table: force horizontal scroll instead of
+     a crushed 9-column table. min-width gives the overflow-x from
+     the global table rule something to actually scroll. ---- */
+/* ---- Contact form: tighter padding on small phones ---- */
+@media (max-width: 480px) {
+  .contact-form {
+    padding: var(--s5);
+  }
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Login / Register card: the .auth-wrap rules live in each
+     page's own <style> block which loads AFTER this stylesheet,
+     so equal-specificity overrides need !important here. ---- */
+@media (max-width: 480px) {
+  .auth-wrap {
+    margin: var(--s6) auto !important;
+    padding: var(--s5) var(--s4) !important;
+  }
+}
+
+/* ---- AdminProducts form: same situation — .form-grid is defined
+     in the page <style> block. ---- */
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .modal {
+    padding: var(--s5) !important;
+  }
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+  .admin-head h1 {
+    font-size: var(--text-xl);
+  }
+}
+
+/* ---- Default.aspx: featured products + value props.
+     These classes are NEW here; the current inline styles in
+     Default.aspx must be removed (see markup notes) — inline
+     styles would otherwise override these rules. ---- */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s5);
+}
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s5);
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(3, 1fr);
+  gap: var(--s8);
+  margin-bottom: var(--s9);
+}
+@media (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .value-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s6);
+  }
+}
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+  .value-grid {
+    grid-template-columns: 1fr;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Master footer bottom bar: stack brand line + legal line ---- */
+@media (max-width: 480px) {
+  footer .container > div:last-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s2);
+  }
+}
+
+/* ---- Drawer: comfortable padding on phones ---- */
+@media (max-width: 480px) {
+  .drawer {
+    padding: var(--s5) var(--s4);
+  }
+  .drawer a {
+    font-size: 17px;
+    padding: 10px 0;
+  }
+}
+
+/* =============================================================
+   v6-SPRINT: MOBILE SPACING & FINAL RESPONSIVE PASS
+   ============================================================= */
+@media (max-width: 768px) {
+  /* 80px section padding becomes 48px — screens stop feeling empty */
+  .section {
+    padding: var(--s7) 0;
+  }
+  .page-head {
+    padding: var(--s5) 0 var(--s4);
+  }
+  .hero {
+    padding: var(--s5) 0 var(--s6);
+  }
+  .bento-card {
+    padding: var(--s5);
+    min-height: 220px;
+  }
+  .bento-card--lg {
+    padding: var(--s5);
+    min-height: 320px;
+  }
+  .bento-card--lg h2 {
+    font-size: var(--text-2xl);
+  }
+  /* section headers: title + "view all" wrap instead of overlapping */
+  .section-head {
+    flex-wrap: wrap;
+    gap: var(--s2);
+  }
+  /* crumbs can be longer than the viewport on deep pages */
+  .crumbs {
+    white-space: normal;
+    word-break: break-word;
+  }
+  /* contact page: 2-col info blocks keep breathing room */
+  .info-block .value {
+    font-size: var(--text-sm);
+  }
+  /* checkout success panel: buttons already wrap via inline flex;
+     ensure the panel itself doesn't overflow */
+  .cart-summary {
+    padding: var(--s5);
+  }
+}
+@media (max-width: 480px) {
+  .section {
+    padding: var(--s6) 0;
+  }
+  .bento-card h3 {
+    font-size: var(--text-lg);
+  }
+  /* utility top bar: promo + links wrap cleanly */
+  .utility .container {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* =============================================================
+   v6-SPRINT: CART + PRODUCT DETAILS RESPONSIVE PASS
+   ============================================================= */
+@media (max-width: 768px) {
+  /* Stacked layout: a sticky summary overlaps scrolling content on
+     phones — make it a normal block. */
+  .cart-summary {
+    position: static;
+  }
+  /* Qty stepper + inline min-width on the Add button overflow a
+     320-360px phone. Wrap: qty on its own line, full-width button.
+     !important needed — the button carries an inline style attr. */
+  .pdp-cta {
+    flex-wrap: wrap;
+  }
+  .pdp-cta .btn {
+    flex-basis: 100% !important;
+    min-width: 0 !important;
+  }
+  .rating-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* pdp headline: --text-display is fine on tablets but shrinks
+     further on phones */
+  .pdp-info h1 {
+    font-size: var(--text-2xl);
+  }
+  .product-detail {
+    padding-top: var(--s4);
+  }
+}
+@media (max-width: 400px) {
+  /* feature grid: 2 cols is tight with small text on very small phones */
+  .pdp-features {
+    grid-template-columns: 1fr;
+  }
+  .gallery-main img {
+    max-height: 380px;
+  }
+}
+
+/* =============================================================
+   v7-SPRINT: ADMIN PAGE RESPONSIVE REBUILD
+   ============================================================= */
+@media (max-width: 900px) {
+  /* admin action bar wraps; count text centers */
+  .admin-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s3);
+  }
+  .admin-actions .btn {
+    width: 100%;
+  }
+  .admin-head {
+    padding: var(--s5) 0;
+  }
+}
+@media (max-width: 640px) {
+  /* EditFormPanel carries an inline padding: var(--s8) — !important
+     is required to beat the inline style on phones. */
+  #EditFormPanel {
+    padding: var(--s5) var(--s4) !important;
+  }
+  .admin-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .admin-actions .btn {
+    width: auto;
+  }
+}
+
+/* =============================================================
+   v9-SPRINT: SHOP FILTER SYSTEM + SORT DROPDOWN
+   ============================================================= */
+
+/* ---- filter links (rendered by code-behind into Literals) ---- */
+.filter-link {
+  display: block;
+  font-size: var(--text-sm);
+  margin-bottom: 8px;
+  color: var(--ink-mute);
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.filter-link:hover {
+  color: var(--primary);
+}
+.filter-link.is-active {
+  color: var(--primary);
+  font-weight: 700;
+}
+.filter-link--clear {
+  color: var(--rose);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.filter-link--clear:hover {
+  color: var(--rose);
+  text-decoration: underline;
+}
+
+/* ---- price range inputs (replaces the old decorative bar) ---- */
+.price-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--s3);
+}
+.price-filter input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--ff-mono);
+  background: var(--bg);
+}
+.price-filter input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.price-filter .dash {
+  color: var(--ink-faint);
+}
+.btn--sm {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---- sort dropdown in the shop toolbar ---- */
+.sort-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+.sort-wrap select {
+  padding: 6px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 12px;
+  font-family: var(--ff-body);
+  color: var(--ink);
+  cursor: pointer;
+}
+.shop-toolbar {
+  flex-wrap: wrap;
+  gap: var(--s3);
+}
+
+/* ---- mobile: filter strip from v5/v7 keeps working with the
+     new filter blocks; price inputs just get narrower ---- */
+@media (max-width: 480px) {
+  .filters .filter-block {
+    min-width: 130px;
   }
 }
 

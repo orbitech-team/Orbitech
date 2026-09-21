@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using OrbitechWeb.Models;
 using OrbitechWeb.Services;
 
 namespace OrbitechWeb
@@ -10,77 +13,125 @@ namespace OrbitechWeb
     {
         protected void Page_Load(object sender, EventArgs e)
         {
+            // No try/catch on the account display on purpose: if something
+            // breaks, you WANT the yellow screen telling you where.
+            UpdateAccountDisplay();
+            UpdateCartBadge();
+        }
+
+        // Safe admin check: works whether Login.aspx.cs stored a native
+        // bool or the string "True" in Session["IsAdmin"].
+        private bool IsAdminUser()
+        {
+            object role = Session["IsAdmin"];
+            if (role == null) return false;
+
             try
             {
-                UpdateAccountDisplay();
+                return Convert.ToBoolean(role);
             }
             catch
             {
+                return role.ToString().Trim()
+                    .Equals("true", StringComparison.OrdinalIgnoreCase);
             }
         }
 
         private void UpdateAccountDisplay()
         {
-            // Build the admin link HTML once
+            // Admin links: top nav + mobile drawer only. The HEADER admin
+            // link was removed (crowded the header, out of place).
             string adminLinkHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:700'>Admin Panel</a>";
-            string adminHeaderHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='font-size:var(--text-sm);font-weight:600;color:var(--primary);margin-right:12px'>Admin Panel</a>";
             string adminDrawerHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:600'>Admin Panel</a>";
 
+            // ---------- LOGGED IN ----------
             if (Session["Username"] != null)
             {
                 string username = Session["Username"].ToString();
-                bool isAdmin = (Session["IsAdmin"] != null && (bool)Session["IsAdmin"]);
+                bool isAdmin = IsAdminUser();
 
-
-                // Phase 2: live favourites count on the header heart
+                // FAVOURITES: live count on the header heart.
+                // Guarded on purpose — the header must never crash a page.
                 try
                 {
                     var favService = new OrbitechService();
                     if (FavCountSpan != null)
-                    {
                         FavCountSpan.InnerText = favService.GetFavouritedProductIds(username).Count.ToString();
-                    }
                 }
                 catch
                 {
-                    // count stays 0 if the service is unreachable - header must never crash
+                    // count stays 0 if the service is unreachable
                 }
 
-                // Account panel — username + logout (this already works)
-                if (AccountPanel != null)
+                if (AccountLiteral != null)
                 {
-                    AccountPanel.Controls.Clear();
-
-                    var greeting = new Literal();
-                    greeting.Text = "<a href='" + ResolveUrl("~/Login.aspx") + "' style='text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:6px'>" +
+                    string greetingHtml = "<a href='" + ResolveUrl("~/Profile.aspx") + "' class='account-trigger'>" +
                         "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/><path d='M4 21c0-4 4-7 8-7s8 3 8 7'/></svg>" +
-                        "<span style='font-size:var(--text-sm);font-weight:600'>" + username + "</span></a>";
+                        "<span>" + username + "</span></a>";
 
-                    var logout = new Literal();
-                    logout.Text = "<a href='" + ResolveUrl("~/Logout.aspx") + "' style='font-size:var(--text-sm);font-weight:600;color:var(--primary);margin-left:12px'>Logout</a>";
+                    string sepHtml = "<span class='account-sep'></span>";
+                    string profileHtml = "<a href='" + ResolveUrl("~/Profile.aspx") + "' class='account-link'>My Profile</a>";
+                    string logoutHtml = "<a href='" + ResolveUrl("~/Logout.aspx") + "' class='account-link'>Logout</a>";
 
-                    AccountPanel.Controls.Add(greeting);
-                    AccountPanel.Controls.Add(logout);
+                    AccountLiteral.Text = greetingHtml + sepHtml + profileHtml + sepHtml + logoutHtml;
                 }
 
-                // Admin links — inject HTML directly, no Visible property needed
                 if (AdminNavLiteral != null)
                     AdminNavLiteral.Text = isAdmin ? adminLinkHtml : "";
+                if (AdminHeaderLiteral != null)
+                    AdminHeaderLiteral.Text = ""; // removed from header by design
                 if (AdminDrawerLiteral != null)
-                    AdminDrawerLiteral.Text = isAdmin ? adminHeaderHtml : "";
-
+                    AdminDrawerLiteral.Text = isAdmin ? adminLinkHtml : "";
                 if (AdminDrawerLiteral1 != null)
                     AdminDrawerLiteral1.Text = isAdmin ? adminDrawerHtml : "";
             }
+            // ---------- LOGGED OUT ----------
             else
             {
-                // Not logged in — empty all admin literals
+                if (AccountLiteral != null)
+                {
+                    AccountLiteral.Text = "<a href='" + ResolveUrl("~/Login.aspx") + "' class='account-trigger' aria-label='Account' title='Login / Register'>" +
+                        "<svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><circle cx='12' cy='8' r='4'/><path d='M4 21c0-4 4-7 8-7s8 3 8 7'/></svg></a>";
+                }
+
                 if (AdminNavLiteral != null)
                     AdminNavLiteral.Text = "";
+                if (AdminHeaderLiteral != null)
+                    AdminHeaderLiteral.Text = "";
                 if (AdminDrawerLiteral != null)
                     AdminDrawerLiteral.Text = "";
                 if (AdminDrawerLiteral1 != null)
                     AdminDrawerLiteral1.Text = "";
+            }
+        }
+
+        // Live cart count badge on the cart icon. Sums item QUANTITIES
+        // (3 of one product = 3). Hidden entirely when the cart is
+        // empty — no floating "0" bubble.
+        private void UpdateCartBadge()
+        {
+            if (CartCountBadge == null) return;
+
+            try
+            {
+                if (Session["Username"] != null)
+                {
+                    OrbitechService service = new OrbitechService();
+                    List<CartItem> items = service.GetCartItems(Session["Username"].ToString());
+                    int count = items.Sum(i => i.Quantity);
+
+                    CartCountBadge.InnerText = count.ToString();
+                    CartCountBadge.Visible = count > 0;
+                }
+                else
+                {
+                    CartCountBadge.Visible = false;
+                }
+            }
+            catch
+            {
+                // The badge is cosmetic — it must never break a page.
+                CartCountBadge.Visible = false;
             }
         }
     }

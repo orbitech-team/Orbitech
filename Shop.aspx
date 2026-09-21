@@ -20,24 +20,36 @@
     <div class="container">
       <div class="shop-layout">
 
+        <!-- FILTERS SIDEBAR: all blocks are rendered by code-behind
+             into Literals so every link preserves the other active
+             filters (e.g. switching brand keeps your category). -->
         <aside class="filters" aria-label="Filters">
           <div class="filter-block">
             <h3>Category</h3>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx") %>' style="text-decoration:none; color:inherit;">All Products</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Phone") %>' style="text-decoration:none; color:inherit;">Cellphones</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>' style="text-decoration:none; color:inherit;">Tablets</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>' style="text-decoration:none; color:inherit;">Smartwatches</a></label>
+            <asp:Literal ID="CategoryFiltersLiteral" runat="server" />
           </div>
           <div class="filter-block">
-            <h3>Price range</h3>
-            <div style="display:flex; justify-content:space-between; font-family:var(--ff-mono); font-size:11px; color:var(--fg-mute)"><span>R199</span><span>R26,000</span></div>
-            <div class="range-bar" aria-hidden="true"></div>
+            <h3>Price range (R)</h3>
+            <div class="price-filter">
+              <asp:TextBox ID="MinPriceInput" runat="server" placeholder="Min" inputmode="numeric" />
+              <span class="dash">&ndash;</span>
+              <asp:TextBox ID="MaxPriceInput" runat="server" placeholder="Max" inputmode="numeric" />
+            </div>
+            <asp:Button ID="ApplyPriceBtn" runat="server" Text="Apply price" CssClass="btn btn--ghost btn--sm" OnClick="ApplyPriceBtn_Click" />
           </div>
           <div class="filter-block">
             <h3>Condition</h3>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?condition=New") %>' style="text-decoration:none; color:inherit;">Brand New</a></label>
-            <label><a href='<%= ResolveUrl("~/Shop.aspx?condition=Refurbished") %>' style="text-decoration:none; color:inherit;">Certified Pre-Owned</a></label>
+            <asp:Literal ID="ConditionFiltersLiteral" runat="server" />
           </div>
+          <div class="filter-block">
+            <h3>Brand</h3>
+            <asp:Literal ID="BrandFiltersLiteral" runat="server" />
+          </div>
+          <div class="filter-block">
+            <h3>Grade</h3>
+            <asp:Literal ID="GradeFiltersLiteral" runat="server" />
+          </div>
+          <asp:Literal ID="ClearFiltersLiteral" runat="server" />
         </aside>
 
         <asp:UpdatePanel ID="ShopUpdatePanel" runat="server">
@@ -47,6 +59,14 @@
               <span class="count">
                 <asp:Literal ID="ProductCountLiteral" runat="server" Text="Loading products..." />
               </span>
+              <label class="sort-wrap">Sort:
+                <asp:DropDownList ID="SortDropDown" runat="server" AutoPostBack="true" OnSelectedIndexChanged="SortDropDown_SelectedIndexChanged">
+                  <asp:ListItem Value="" Text="Featured" />
+                  <asp:ListItem Value="price-asc" Text="Price: Low to High" />
+                  <asp:ListItem Value="price-desc" Text="Price: High to Low" />
+                  <asp:ListItem Value="name-asc" Text="Name: A to Z" />
+                </asp:DropDownList>
+              </label>
             </div>
 
             <div class="shop-grid">
@@ -89,7 +109,9 @@
             </div>
 
             <asp:Panel ID="NoResultsPanel" runat="server" Visible="false" style="padding: var(--s9); text-align: center;">
-              <asp:Literal ID="NoResultsMessage" runat="server" />
+              <p style="font-size: var(--text-lg); color: var(--fg-mute);">
+                <asp:Literal ID="NoResultsMessage" runat="server" Text="No products found. Try a different filter combination." />
+              </p>
             </asp:Panel>
 
           </ContentTemplate>

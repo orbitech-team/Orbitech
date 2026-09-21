@@ -1,11 +1,3 @@
-// ============================================================
-// ProductDetails.aspx.cs — Code-Behind for ProductDetails.aspx
-// ============================================================
-// TUTORIAL STEP: This code reads the "id" query parameter, calls the
-// WCF service to get that specific product, and populates the page controls.
-//
-// PLACE THIS FILE IN: OrbitechWeb/ProductDetails.aspx.cs
-// ============================================================
 
 using System;
 using OrbitechWeb.Models;
