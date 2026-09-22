@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- ============================================================
      OrbitechWeb.csproj — Project File for Visual Studio
      ============================================================
@@ -67,6 +67,7 @@
     <Content Include="assets\css\styles.css" />
     <Content Include="assets\js\main.js" />
     <Content Include="Favourite.aspx" />
+    <Content Include="InvoiceView.aspx" />
     <Content Include="Logout.aspx" />
     <Content Include="Profile.aspx" />
     <Content Include="Shop.aspx" />
@@ -76,6 +77,8 @@
     <Content Include="Login.aspx" />
     <Content Include="Register.aspx" />
     <Content Include="AdminProducts.aspx" />
+    <Content Include="AdminsReport.aspx" />
+    <Content Include="Feedback.aspx" />
     <Content Include="Site.Master" />
     <Content Include="web.config" />
     <!-- WCF Service -->
@@ -84,6 +87,23 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Code-behind and class files -->
+    <Compile Include="AdminsReport.aspx.cs">
+      <DependentUpon>AdminsReport.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="AdminsReport.aspx.designer.cs">
+      <DependentUpon>AdminsReport.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Feedback.aspx.cs">
+      <DependentUpon>Feedback.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Feedback.aspx.designer.cs">
+      <DependentUpon>Feedback.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Models\Feedback.cs" />
+    <Compile Include="Models\FeedbackSummary.cs" />
+    <Compile Include="Models\SalesSummary.cs" />
     <Compile Include="AdminProducts.aspx.designer.cs">
       <DependentUpon>AdminProducts.aspx</DependentUpon>
     </Compile>
@@ -113,6 +133,13 @@
     </Compile>
     <Compile Include="Favourite.aspx.designer.cs">
       <DependentUpon>Favourite.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="InvoiceView.aspx.cs">
+      <DependentUpon>InvoiceView.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="InvoiceView.aspx.designer.cs">
+      <DependentUpon>InvoiceView.aspx</DependentUpon>
     </Compile>
     <Compile Include="Login.aspx.designer.cs">
       <DependentUpon>Login.aspx</DependentUpon>

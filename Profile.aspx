@@ -1,4 +1,4 @@
-﻿<%@ Page Title="My Profile — OrbiTech" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Profile.aspx.cs" Inherits="OrbitechWeb.Profile" %>
+<%@ Page Title="My Profile — OrbiTech" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Profile.aspx.cs" Inherits="OrbitechWeb.Profile" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="head" runat="server">
   <meta name="description" content="Your OrbiTech profile and account overview." />
@@ -67,6 +67,7 @@
               </div>
               <span class="order-status"><%# Eval("Status") %></span>
               <span class="order-total">R<%# Eval("Total", "{0:N2}") %></span>
+              <a href='<%# ResolveUrl("~/InvoiceView.aspx") %>?id=<%# Eval("OrderID") %>' class="order-invoice-link" style="font-size: var(--text-sm); color: var(--primary); font-weight: 600; white-space: nowrap;">View invoice &rarr;</a>
             </div>
           </ItemTemplate>
         </asp:Repeater>
@@ -97,7 +98,7 @@
         <div class="profile-actions" style="margin-top: var(--s5);">
           <a href='<%= ResolveUrl("~/AdminProducts.aspx") %>' class="btn btn--indigo">Manage Products</a>
           <!-- MEMBER C's page: link activates once their Reports work merges -->
-          <a href='<%= ResolveUrl("~/Reports.aspx") %>' class="btn btn--ghost">Full Reports</a>
+          <a href='<%= ResolveUrl("~/AdminsReport.aspx") %>' class="btn btn--ghost">Full Reports</a>
         </div>
 
         <h2 class="profile-h2">Latest Orders (all customers)</h2>
@@ -111,6 +112,7 @@
               <span class="order-user"><%# Eval("Username") %></span>
               <span class="order-status"><%# Eval("Status") %></span>
               <span class="order-total">R<%# Eval("Total", "{0:N2}") %></span>
+              <a href='<%# ResolveUrl("~/InvoiceView.aspx") %>?id=<%# Eval("OrderID") %>' class="order-invoice-link" style="font-size: var(--text-sm); color: var(--primary); font-weight: 600; white-space: nowrap;">View invoice &rarr;</a>
             </div>
           </ItemTemplate>
         </asp:Repeater>

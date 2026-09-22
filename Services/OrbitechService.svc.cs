@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.ServiceModel;
 using OrbitechWeb.Models;
 using OrbitechWeb.Utils;
+using FeedbackModel = OrbitechWeb.Models.Feedback;
 
 namespace OrbitechWeb.Services
 {
@@ -145,7 +146,7 @@ namespace OrbitechWeb.Services
                            OR p.p_Description LIKE @Term
                            OR p.p_Condition LIKE @Term
                            OR p.p_Grade LIKE @Term
-                           OR c.c_Name LIKE @Term
+                           OR c.c_Name LIKE @TermF
                         ORDER BY CASE WHEN p.p_Name LIKE @Term THEN 0 ELSE 1 END, p.p_Name";
 
                 SqlCommand cmd = new SqlCommand(query, conn);
@@ -1079,6 +1080,296 @@ namespace OrbitechWeb.Services
         }
 
 
+
+
+        // === MEMBER C: FEEDBACK + REPORTS ===
+
+        public string SubmitFeedback(int orderId, int deliveryRating, int satisfactionRating,
+            string comments, bool isComplaint, string complaintCategory)
+        {
+            if (deliveryRating < 1 || deliveryRating > 5
+                || satisfactionRating < 1 || satisfactionRating > 5)
+            {
+                return "Ratings must be between 1 and 5.";
+            }
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                string orderQuery = "SELECT COUNT(*) FROM ORBI_ORDER WHERE o_ID = @OrderID";
+                using (SqlCommand orderCmd = new SqlCommand(orderQuery, conn))
+                {
+                    orderCmd.Parameters.AddWithValue("@OrderID", orderId);
+                    if (Convert.ToInt32(orderCmd.ExecuteScalar()) == 0)
+                    {
+                        return "The selected order does not exist.";
+                    }
+                }
+
+                string duplicateQuery = "SELECT COUNT(*) FROM FEEDBACK WHERE o_ID = @OrderID";
+                using (SqlCommand duplicateCmd = new SqlCommand(duplicateQuery, conn))
+                {
+                    duplicateCmd.Parameters.AddWithValue("@OrderID", orderId);
+                    if (Convert.ToInt32(duplicateCmd.ExecuteScalar()) > 0)
+                    {
+                        return "Feedback has already been submitted for this order.";
+                    }
+                }
+
+                string insertQuery = @"INSERT INTO FEEDBACK
+                        (o_ID, f_DeliveryRating, f_SatisfactionRating, f_Comments,
+                         f_IsComplaint, f_ComplaintCategory, f_DateSubmitted)
+                    VALUES
+                        (@OrderID, @DeliveryRating, @SatisfactionRating, @Comments,
+                         @IsComplaint, @ComplaintCategory, GETDATE())";
+
+                using (SqlCommand cmd = new SqlCommand(insertQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@OrderID", orderId);
+                    cmd.Parameters.AddWithValue("@DeliveryRating", deliveryRating);
+                    cmd.Parameters.AddWithValue("@SatisfactionRating", satisfactionRating);
+                    cmd.Parameters.AddWithValue("@Comments",
+                        string.IsNullOrWhiteSpace(comments) ? (object)DBNull.Value : comments);
+                    cmd.Parameters.AddWithValue("@IsComplaint", isComplaint);
+                    cmd.Parameters.AddWithValue("@ComplaintCategory",
+                        string.IsNullOrWhiteSpace(complaintCategory)
+                            ? (object)DBNull.Value : complaintCategory);
+
+                    return cmd.ExecuteNonQuery() > 0
+                        ? "SUCCESS: Feedback submitted successfully."
+                        : "Feedback could not be submitted.";
+                }
+            }
+        }
+
+        public FeedbackSummary GetFeedbackSummary()
+        {
+            FeedbackSummary summary = new FeedbackSummary();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                string aggregateQuery = @"SELECT
+                        COUNT(*) AS TotalResponses,
+                        ISNULL(AVG(CAST(f_DeliveryRating AS DECIMAL(5,2))), 0) AS AvgDeliveryRating,
+                        ISNULL(AVG(CAST(f_SatisfactionRating AS DECIMAL(5,2))), 0) AS AvgSatisfactionRating,
+                        ISNULL(SUM(CASE WHEN f_SatisfactionRating >= 4 THEN 1 ELSE 0 END) * 100.0
+                            / NULLIF(COUNT(*), 0), 0) AS PercentSatisfied
+                    FROM FEEDBACK";
+
+                using (SqlCommand cmd = new SqlCommand(aggregateQuery, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        summary.TotalResponses = Convert.ToInt32(reader["TotalResponses"]);
+                        summary.AvgDeliveryRating = Convert.ToDouble(reader["AvgDeliveryRating"]);
+                        summary.AvgSatisfactionRating = Convert.ToDouble(reader["AvgSatisfactionRating"]);
+                        summary.PercentSatisfied = Convert.ToDouble(reader["PercentSatisfied"]);
+                    }
+                }
+
+                string distributionQuery = @"SELECT f_SatisfactionRating AS Stars, COUNT(*) AS RatingCount
+                    FROM FEEDBACK
+                    GROUP BY f_SatisfactionRating";
+
+                Dictionary<int, int> counts = new Dictionary<int, int>();
+                using (SqlCommand cmd = new SqlCommand(distributionQuery, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        counts[Convert.ToInt32(reader["Stars"])] = Convert.ToInt32(reader["RatingCount"]);
+                    }
+                }
+
+                for (int star = 1; star <= 5; star++)
+                {
+                    int count = counts.ContainsKey(star) ? counts[star] : 0;
+                    summary.SatisfactionDistribution.Add(new SatisfactionBucket
+                    {
+                        Stars = star,
+                        Count = count,
+                        Percent = summary.TotalResponses > 0
+                            ? Math.Round(count * 100.0 / summary.TotalResponses, 1) : 0
+                    });
+                }
+            }
+
+            return summary;
+        }
+
+        public List<FeedbackModel> GetRecentFeedback(int count)
+        {
+            List<FeedbackModel> feedback = new List<FeedbackModel>();
+            int safeCount = Math.Max(1, Math.Min(count, 100));
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT TOP (@Count)
+                        f_ID, o_ID, f_DeliveryRating, f_SatisfactionRating,
+                        f_Comments, f_IsComplaint, f_ComplaintCategory, f_DateSubmitted
+                    FROM FEEDBACK
+                    ORDER BY f_DateSubmitted DESC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@Count", safeCount);
+                conn.Open();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        feedback.Add(MapFeedback(reader));
+                    }
+                }
+            }
+
+            return feedback;
+        }
+
+        public List<FeedbackModel> GetComplaints()
+        {
+            List<FeedbackModel> complaints = new List<FeedbackModel>();
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                string query = @"SELECT f_ID, o_ID, f_DeliveryRating, f_SatisfactionRating,
+                        f_Comments, f_IsComplaint, f_ComplaintCategory, f_DateSubmitted
+                    FROM FEEDBACK
+                    WHERE f_IsComplaint = 1
+                    ORDER BY f_DateSubmitted DESC";
+
+                SqlCommand cmd = new SqlCommand(query, conn);
+                conn.Open();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        complaints.Add(MapFeedback(reader));
+                    }
+                }
+            }
+
+            return complaints;
+        }
+
+        private FeedbackModel MapFeedback(SqlDataReader reader)
+        {
+            return new FeedbackModel
+            {
+                FeedbackID = Convert.ToInt32(reader["f_ID"]),
+                OrderID = Convert.ToInt32(reader["o_ID"]),
+                DeliveryRating = Convert.ToInt32(reader["f_DeliveryRating"]),
+                SatisfactionRating = Convert.ToInt32(reader["f_SatisfactionRating"]),
+                Comments = reader["f_Comments"] == DBNull.Value
+                    ? string.Empty
+                    : reader["f_Comments"].ToString(),
+                IsComplaint = Convert.ToBoolean(reader["f_IsComplaint"]),
+                ComplaintCategory = reader["f_ComplaintCategory"] == DBNull.Value
+                    ? string.Empty
+                    : reader["f_ComplaintCategory"].ToString(),
+                FeedbackDate = Convert
+                    .ToDateTime(reader["f_DateSubmitted"])
+                    .ToString("dd MMM yyyy")
+            };
+        }
+
+
+        public SalesSummary GetSalesSummary(int days)
+        {
+            SalesSummary summary = new SalesSummary();
+            int safeDays = Math.Max(1, Math.Min(days, 3650));
+
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                // Use the saved order total so revenue exactly matches checkout/invoices.
+                string totalsQuery = @"SELECT
+                        ISNULL(SUM(o_Total), 0) AS TotalRevenue,
+                        COUNT(*) AS OrderCount,
+                        ISNULL(AVG(o_Total), 0) AS AvgOrderValue
+                    FROM ORBI_ORDER
+                    WHERE o_Date >= DATEADD(DAY, -@Days, GETDATE())
+                      AND o_Status <> 'Cancelled'";
+
+                using (SqlCommand cmd = new SqlCommand(totalsQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Days", safeDays);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            summary.TotalRevenue = Convert.ToDecimal(reader["TotalRevenue"]);
+                            summary.OrderCount = Convert.ToInt32(reader["OrderCount"]);
+                            summary.AvgOrderValue = Convert.ToDecimal(reader["AvgOrderValue"]);
+                        }
+                    }
+                }
+
+                string monthlyQuery = @"SELECT
+                        CONVERT(char(7), o_Date, 120) AS MonthLabel,
+                        COUNT(*) AS OrderCount,
+                        ISNULL(SUM(o_Total), 0) AS Revenue
+                    FROM ORBI_ORDER
+                    WHERE o_Date >= DATEADD(DAY, -@Days, GETDATE())
+                      AND o_Status <> 'Cancelled'
+                    GROUP BY CONVERT(char(7), o_Date, 120)
+                    ORDER BY MonthLabel DESC";
+
+                using (SqlCommand cmd = new SqlCommand(monthlyQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Days", safeDays);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            summary.MonthlySales.Add(new MonthlySale
+                            {
+                                MonthLabel = reader["MonthLabel"].ToString(),
+                                OrderCount = Convert.ToInt32(reader["OrderCount"]),
+                                Revenue = Convert.ToDecimal(reader["Revenue"])
+                            });
+                        }
+                    }
+                }
+
+                string productsQuery = @"SELECT TOP 10
+                        p.p_Name AS ProductName,
+                        SUM(oi.oi_Quantity) AS QuantitySold,
+                        SUM(oi.oi_Quantity * oi.oi_UnitPrice) AS Revenue
+                    FROM ORBI_PRODUCT p
+                    INNER JOIN ORDER_ITEM oi ON p.p_ID = oi.p_ID
+                    INNER JOIN ORBI_ORDER o ON oi.o_ID = o.o_ID
+                    WHERE o.o_Date >= DATEADD(DAY, -@Days, GETDATE())
+                      AND o.o_Status <> 'Cancelled'
+                    GROUP BY p.p_Name
+                    ORDER BY Revenue DESC";
+
+                using (SqlCommand cmd = new SqlCommand(productsQuery, conn))
+                {
+                    cmd.Parameters.AddWithValue("@Days", safeDays);
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            summary.TopProducts.Add(new TopProduct
+                            {
+                                ProductName = reader["ProductName"].ToString(),
+                                QuantitySold = Convert.ToInt32(reader["QuantitySold"]),
+                                Revenue = Convert.ToDecimal(reader["Revenue"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return summary;
+        }
 
     }
 }

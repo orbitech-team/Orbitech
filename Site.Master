@@ -61,6 +61,7 @@
         <a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>'>Tablets</a>
         <a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>'>Smartwatches</a>
         <a href='<%= ResolveUrl("~/Contact.aspx") %>'>Support</a>
+        <a href='<%= ResolveUrl("~/Feedback.aspx") %>'>Feedback</a>
                 <asp:Literal ID="AdminNavLiteral" runat="server"></asp:Literal>
       </div>
 
@@ -77,6 +78,7 @@
     <a href='<%= ResolveUrl("~/Shop.aspx?cat=Tablet") %>'>Tablets</a>
     <a href='<%= ResolveUrl("~/Shop.aspx?cat=Smartwatch") %>'>Smartwatches</a>
     <a href='<%= ResolveUrl("~/Contact.aspx") %>'>Support</a>
+    <a href='<%= ResolveUrl("~/Feedback.aspx") %>'>Feedback</a>
     <a href='<%= ResolveUrl("~/Cart.aspx") %>'>Cart</a>
     <asp:Literal ID="AdminDrawerLiteral1" runat="server"></asp:Literal>
     <a href='<%= ResolveUrl("~/Login.aspx") %>' class="btn btn--indigo" style="margin-top:var(--s5); justify-content:center">Login / Register</a>
@@ -114,6 +116,7 @@
           <h4 style="color: var(--paper); margin-bottom: var(--s5); font-size: var(--text-base);">Support</h4>
           <ul style="opacity: 0.7; font-size: var(--text-sm); display: grid; gap: var(--s3); list-style:none; padding:0;">
             <li><a href='<%= ResolveUrl("~/Contact.aspx") %>'>Contact Us</a></li>
+            <li><a href='<%= ResolveUrl("~/Feedback.aspx") %>'>Delivery &amp; Satisfaction</a></li>
             <li><a href="#">Shipping Policy</a></li>
             <li><a href="#">FAQs</a></li>
             <li><a href="#">Track Order</a></li>

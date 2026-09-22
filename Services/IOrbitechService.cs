@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ServiceModel;
 using OrbitechWeb.Models;
+using FeedbackModel = OrbitechWeb.Models.Feedback;
 
 namespace OrbitechWeb.Services
 {
@@ -9,7 +10,7 @@ namespace OrbitechWeb.Services
     {
         [OperationContract]
         bool ValidateUser(string username, string password);
-
+        
         [OperationContract]
         bool RegisterUser(string username, string password, string email);
 
@@ -82,6 +83,24 @@ namespace OrbitechWeb.Services
 
         [OperationContract]
         List<int> GetFavouritedProductIds(string username);
+        // === MEMBER C: FEEDBACK + REPORTS ===
+
+        [OperationContract]
+        string SubmitFeedback(int orderId, int deliveryRating, int satisfactionRating,
+            string comments, bool isComplaint, string complaintCategory);
+
+        [OperationContract]
+        FeedbackSummary GetFeedbackSummary();
+
+        [OperationContract]
+        List<FeedbackModel> GetRecentFeedback(int count);
+
+        [OperationContract]
+        List<FeedbackModel> GetComplaints();
+
+        [OperationContract]
+        SalesSummary GetSalesSummary(int days);
+
         // === PART A: CHECKOUT + ORDERS ===
 
         [OperationContract]

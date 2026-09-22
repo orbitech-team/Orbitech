@@ -11,169 +11,142 @@ namespace OrbitechWeb
 {
 
 
-    public partial class Profile
+    public partial class InvoiceView
     {
 
         /// <summary>
-        /// AvatarLiteral control.
+        /// NotFoundPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AvatarLiteral;
+        protected global::System.Web.UI.WebControls.Panel NotFoundPanel;
 
         /// <summary>
-        /// UsernameLiteral control.
+        /// NotFoundMessage control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal UsernameLiteral;
+        protected global::System.Web.UI.WebControls.Literal NotFoundMessage;
 
         /// <summary>
-        /// RoleLiteral control.
+        /// InvoiceCardPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal RoleLiteral;
+        protected global::System.Web.UI.WebControls.Panel InvoiceCardPanel;
 
         /// <summary>
-        /// MemberSinceLiteral control.
+        /// InvoiceNumberLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal MemberSinceLiteral;
+        protected global::System.Web.UI.WebControls.Literal InvoiceNumberLiteral;
 
         /// <summary>
-        /// CustomerViewPanel control.
+        /// InvoiceDateLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel CustomerViewPanel;
+        protected global::System.Web.UI.WebControls.Literal InvoiceDateLiteral;
 
         /// <summary>
-        /// CustOrdersLiteral control.
+        /// StatusLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal CustOrdersLiteral;
+        protected global::System.Web.UI.WebControls.Literal StatusLiteral;
 
         /// <summary>
-        /// CustSpentLiteral control.
+        /// CustomerNameLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal CustSpentLiteral;
+        protected global::System.Web.UI.WebControls.Literal CustomerNameLiteral;
 
         /// <summary>
-        /// CustFavsLiteral control.
+        /// InvoiceLinesRepeater control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal CustFavsLiteral;
+        protected global::System.Web.UI.WebControls.Repeater InvoiceLinesRepeater;
 
         /// <summary>
-        /// CustNoOrdersPanel control.
+        /// SubtotalLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel CustNoOrdersPanel;
+        protected global::System.Web.UI.WebControls.Literal SubtotalLiteral;
 
         /// <summary>
-        /// CustOrdersRepeater control.
+        /// DiscountRowPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater CustOrdersRepeater;
+        protected global::System.Web.UI.WebControls.Panel DiscountRowPanel;
 
         /// <summary>
-        /// AdminViewPanel control.
+        /// DiscountLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel AdminViewPanel;
+        protected global::System.Web.UI.WebControls.Literal DiscountLiteral;
 
         /// <summary>
-        /// AdminProductsLiteral control.
+        /// ShippingLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminProductsLiteral;
+        protected global::System.Web.UI.WebControls.Literal ShippingLiteral;
 
         /// <summary>
-        /// AdminOrdersLiteral control.
+        /// VatLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminOrdersLiteral;
+        protected global::System.Web.UI.WebControls.Literal VatLiteral;
 
         /// <summary>
-        /// AdminUsersLiteral control.
+        /// TotalLiteral control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminUsersLiteral;
+        protected global::System.Web.UI.WebControls.Literal TotalLiteral;
 
         /// <summary>
-        /// AdminRevenueLiteral control.
+        /// PrintBtn control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal AdminRevenueLiteral;
-
-        /// <summary>
-        /// AdminOrdersRepeater control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater AdminOrdersRepeater;
-
-        /// <summary>
-        /// NoLowStockPanel control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel NoLowStockPanel;
-
-        /// <summary>
-        /// LowStockRepeater control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater LowStockRepeater;
+        protected global::System.Web.UI.WebControls.Button PrintBtn;
     }
 }

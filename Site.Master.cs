@@ -41,8 +41,10 @@ namespace OrbitechWeb
         {
             // Admin links: top nav + mobile drawer only. The HEADER admin
             // link was removed (crowded the header, out of place).
-            string adminLinkHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:700'>Admin Panel</a>";
-            string adminDrawerHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:600'>Admin Panel</a>";
+            string adminLinkHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:700'>Admin Panel</a>" +
+                "<a href='" + ResolveUrl("~/AdminsReport.aspx") + "' style='color:var(--primary);font-weight:700'>Reports</a>";
+            string adminDrawerHtml = "<a href='" + ResolveUrl("~/AdminProducts.aspx") + "' style='color:var(--primary);font-weight:600'>Admin Panel</a>" +
+                "<a href='" + ResolveUrl("~/AdminsReport.aspx") + "' style='color:var(--primary);font-weight:600'>Reports</a>";
 
             // ---------- LOGGED IN ----------
             if (Session["Username"] != null)
